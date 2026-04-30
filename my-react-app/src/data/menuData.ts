@@ -1,4 +1,4 @@
-import { menuImages } from "../assets/menuImages";
+import { menuImages } from "../assets/MenuImages";
 
 export interface MenuItem {
   id: number;

@@ -2,19 +2,22 @@ import { useState, useEffect } from 'react';
 import { Filter, X, Search } from 'lucide-react';
 import { useSearchParams } from 'react-router';
 import { useApp } from '../context/AppContext';
-import { menuItems } from '../data/menuData';
 import { AddToCartButton } from '../components/AddToCartButton';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { getMenuCategories, getMenuItems, type MenuItem } from '../services/menuService';
 
-const categories = ['All', 'Breakfast', 'Starters', 'Vegan', 'Main Dishes', 'Desserts', 'Drinks'];
 const dietaryOptions = ['All', 'vegan', 'vegetarian', 'gluten-free'];
 
 export function MenuPage() {
   const { unavailableItems, searchQuery } = useApp();
   const [searchParams] = useSearchParams();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<string[]>(['All']);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+  const [menuError, setMenuError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedDietary, setSelectedDietary] = useState('All');
   const [ingredientFilter, setIngredientFilter] = useState('');
@@ -27,15 +30,48 @@ export function MenuPage() {
     setSearchTerm(searchParams.get('search') ?? '');
   }, [searchParams]);
 
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadMenu = async () => {
+      try {
+        setIsLoadingMenu(true);
+        setMenuError(null);
+        const [items, fetchedCategories] = await Promise.all([getMenuItems(), getMenuCategories()]);
+        if (!isMounted) return;
+        setMenuItems(items);
+        setCategories(['All', ...fetchedCategories]);
+      } catch {
+        if (!isMounted) return;
+        setMenuError('Unable to load menu data. Please try again.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingMenu(false);
+        }
+      }
+    };
+
+    loadMenu();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   const filteredItems = menuItems.filter(item => {
+<<<<<<< HEAD
     // Local and global search (name or ingredients)
+=======
+    // Global search (name or description — ingredients may be empty from API)
+>>>>>>> main
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       const nameMatch = item.name.toLowerCase().includes(q);
+      const descMatch = item.description.toLowerCase().includes(q);
       const ingMatch = item.ingredients.some(ing => ing.toLowerCase().includes(q));
-      if (!nameMatch && !ingMatch) return false;
+      if (!nameMatch && !descMatch && !ingMatch) return false;
     }
 
+<<<<<<< HEAD
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const nameMatch = item.name.toLowerCase().includes(q);
@@ -44,13 +80,16 @@ export function MenuPage() {
     }
 
     // Category filter
+=======
+    // Category filter (all API items have category 'Menu' until backend is extended)
+>>>>>>> main
     if (selectedCategory !== 'All' && item.category !== selectedCategory) return false;
 
-    // Dietary filter
+    // Dietary filter (no-op when backend returns no dietary data)
     if (selectedDietary !== 'All' && !item.dietary.includes(selectedDietary)) return false;
 
-    // Ingredient filter
-    if (ingredientFilter && !item.ingredients.some(ing =>
+    // Ingredient filter (no-op when ingredients array is empty)
+    if (ingredientFilter && item.ingredients.length > 0 && !item.ingredients.some(ing =>
       ing.toLowerCase().includes(ingredientFilter.toLowerCase())
     )) return false;
 
@@ -201,7 +240,27 @@ export function MenuPage() {
               </p>
             </div>
 
+<<<<<<< HEAD
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
+=======
+            {isLoadingMenu && (
+              <div className="text-center py-16">
+                <p className="text-gray-400 text-lg">Loading menu...</p>
+              </div>
+            )}
+
+            {menuError && !isLoadingMenu && (
+              <div className="text-center py-16">
+                <p className="text-red-400 text-lg mb-4">{menuError}</p>
+                <Button onClick={() => window.location.reload()} variant="secondary">
+                  Retry
+                </Button>
+              </div>
+            )}
+
+            {!isLoadingMenu && !menuError && (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+>>>>>>> main
               {filteredItems.map(item => (
                 <Card
                   key={item.id}
@@ -251,8 +310,9 @@ export function MenuPage() {
                 </Card>
               ))}
             </div>
+            )}
 
-            {filteredItems.length === 0 && (
+            {!isLoadingMenu && !menuError && filteredItems.length === 0 && (
               <div className="text-center py-16">
                 <p className="text-gray-400 text-lg">No items match your filters</p>
               </div>

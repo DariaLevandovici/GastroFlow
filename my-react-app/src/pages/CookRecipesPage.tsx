@@ -1,11 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ArrowLeft, Clock, Users, ChefHat } from 'lucide-react';
 import { useNavigate } from 'react-router';
-import { menuItems } from '../data/menuData';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-
-type MenuItem = typeof menuItems[0];
+import { getMenuItems, type MenuItem } from '../services/menuService';
 
 interface RecipeItem extends MenuItem {
   prepTime: string;
@@ -16,11 +14,40 @@ interface RecipeItem extends MenuItem {
 
 export function CookRecipesPage() {
   const navigate = useNavigate();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+  const [menuError, setMenuError] = useState<string | null>(null);
   const [recipeSearchTerm, setRecipeSearchTerm] = useState('');
   const [recipeCategory, setRecipeCategory] = useState('All');
   const [selectedRecipe, setSelectedRecipe] = useState<RecipeItem | null>(null);
 
   const categories = ['All', 'Breakfast', 'Starters', 'Vegan', 'Main Dishes', 'Desserts', 'Drinks'];
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadMenu = async () => {
+      try {
+        setIsLoadingMenu(true);
+        setMenuError(null);
+        const items = await getMenuItems();
+        if (!isMounted) return;
+        setMenuItems(items);
+      } catch {
+        if (!isMounted) return;
+        setMenuError('Unable to load recipes.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingMenu(false);
+        }
+      }
+    };
+
+    loadMenu();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   // Enhanced recipes with detailed preparation instructions
   const recipesWithInstructions = menuItems.map(item => ({
@@ -197,7 +224,10 @@ export function CookRecipesPage() {
 
   const filteredRecipes = recipesWithInstructions.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(recipeSearchTerm.toLowerCase()) ||
-      item.ingredients.some(ing => ing.toLowerCase().includes(recipeSearchTerm.toLowerCase()));
+      // Only search ingredients if there are any (API items have empty array)
+      (item.ingredients.length > 0 && item.ingredients.some(ing =>
+        ing.toLowerCase().includes(recipeSearchTerm.toLowerCase())
+      ));
     const matchesCategory = recipeCategory === 'All' || item.category === recipeCategory;
     return matchesSearch && matchesCategory;
   });
@@ -220,7 +250,15 @@ export function CookRecipesPage() {
           </div>
         </div>
 
-        {selectedRecipe ? (
+        {isLoadingMenu ? (
+          <div className="text-center py-16">
+            <p className="text-gray-400 text-lg">Loading recipes...</p>
+          </div>
+        ) : menuError ? (
+          <div className="text-center py-16">
+            <p className="text-red-400 text-lg">{menuError}</p>
+          </div>
+        ) : selectedRecipe ? (
           /* Recipe Detail View */
           <div className="max-w-5xl mx-auto">
             <Button

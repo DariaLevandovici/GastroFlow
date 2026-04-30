@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { MenuItem } from '../../../data/menuData';
+import type { MenuItem } from '../../../services/menuService';
 import { ProductCard } from './ProductCard';
 import { Button } from '../../../ui/button';
 

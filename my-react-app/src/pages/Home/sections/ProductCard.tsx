@@ -1,4 +1,4 @@
-import type { MenuItem } from '../../../data/menuData';
+import type { MenuItem } from '../../../services/menuService';
 import { AddToCartButton } from '../../../components/AddToCartButton';
 
 interface ProductCardProps {

@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plus, Minus, Trash2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../context/AppContext';
-import { menuItems } from '../data/menuData';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
+import { getMenuCategories, getMenuItems, type MenuItem } from '../services/menuService';
 
 interface OrderItem {
   id: number;
@@ -17,6 +17,10 @@ interface OrderItem {
 export function WaiterCreateOrder() {
   const navigate = useNavigate();
   const { tables, addOrder } = useApp();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<string[]>(['All']);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+  const [menuError, setMenuError] = useState<string | null>(null);
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -24,9 +28,34 @@ export function WaiterCreateOrder() {
   const [orderComment, setOrderComment] = useState('');
   const [showCommentModal, setShowCommentModal] = useState(false);
 
-  const categories = ['All', 'Breakfast', 'Starters', 'Vegan', 'Main Dishes', 'Desserts', 'Drinks'];
+  useEffect(() => {
+    let isMounted = true;
 
-  const addItem = (item: typeof menuItems[0]) => {
+    const loadMenu = async () => {
+      try {
+        setIsLoadingMenu(true);
+        setMenuError(null);
+        const [items, fetchedCategories] = await Promise.all([getMenuItems(), getMenuCategories()]);
+        if (!isMounted) return;
+        setMenuItems(items);
+        setCategories(['All', ...fetchedCategories]);
+      } catch {
+        if (!isMounted) return;
+        setMenuError('Unable to load menu items.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingMenu(false);
+        }
+      }
+    };
+
+    loadMenu();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const addItem = (item: MenuItem) => {
     const existing = orderItems.find(i => i.id === item.id);
     if (existing) {
       setOrderItems(orderItems.map(i => 
@@ -79,6 +108,7 @@ export function WaiterCreateOrder() {
   };
 
   const filteredItems = menuItems.filter(item => {
+    // category='Menu' from API — items pass when 'All' is selected
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
     const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
@@ -155,6 +185,14 @@ export function WaiterCreateOrder() {
 
             {/* Menu Items Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {isLoadingMenu && (
+                <p className="col-span-full text-center text-gray-400 py-8">Loading menu...</p>
+              )}
+              {menuError && !isLoadingMenu && (
+                <p className="col-span-full text-center text-red-400 py-8">{menuError}</p>
+              )}
+              {!isLoadingMenu && !menuError && (
+                <>
               {filteredItems.map(item => (
                 <Button
                   key={item.id}
@@ -169,6 +207,8 @@ export function WaiterCreateOrder() {
                   <p className="text-blue-400 font-bold">{item.price} MDL</p>
                 </Button>
               ))}
+                </>
+              )}
             </div>
           </div>
 

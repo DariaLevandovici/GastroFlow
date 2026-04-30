@@ -1,13 +1,63 @@
-import { menuItems } from '../../../data/menuData';
+import { useEffect, useState } from 'react';
 import { MenuCarousel } from './MenuCarousel';
 import { ProductCard } from './ProductCard';
 
 import { useApp } from '../../../context/AppContext';
-
-const categories = ['Breakfast', 'Starters', 'Vegan', 'Main Dishes', 'Desserts', 'Drinks'];
+import { getMenuCategories, getMenuItems, type MenuItem } from '../../../services/menuService';
 
 export function MenuSection() {
   const { searchQuery } = useApp();
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<string[]>([]);
+  const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+  const [menuError, setMenuError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadMenu = async () => {
+      try {
+        setIsLoadingMenu(true);
+        setMenuError(null);
+        const [items, fetchedCategories] = await Promise.all([getMenuItems(), getMenuCategories()]);
+        if (!isMounted) return;
+        setMenuItems(items);
+        setCategories(fetchedCategories);
+      } catch {
+        if (!isMounted) return;
+        setMenuError('Unable to load menu section.');
+      } finally {
+        if (isMounted) {
+          setIsLoadingMenu(false);
+        }
+      }
+    };
+
+    loadMenu();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  if (isLoadingMenu) {
+    return (
+      <section id="menu" className="py-16 bg-[#1a1a1a]">
+        <div className="container mx-auto px-6 text-center">
+          <p className="text-gray-400 text-lg">Loading menu...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (menuError) {
+    return (
+      <section id="menu" className="py-16 bg-[#1a1a1a]">
+        <div className="container mx-auto px-6 text-center">
+          <p className="text-red-400 text-lg">{menuError}</p>
+        </div>
+      </section>
+    );
+  }
 
   if (searchQuery) {
     const query = searchQuery.toLowerCase();

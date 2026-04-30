@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { LogOut, TrendingUp, Package, Calendar, DollarSign, Users, AlertTriangle } from 'lucide-react';
+import { LogOut, TrendingUp, Package, Calendar, DollarSign, Users, AlertTriangle, Database } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Button } from '../ui/button';
+<<<<<<< HEAD
 import { Input } from '../ui/input';
 
 const mockStaffAccounts = [
@@ -10,10 +11,15 @@ const mockStaffAccounts = [
   { id: 2, name: 'Elena Rusu', role: 'Cook' },
   { id: 3, name: 'Mihai Ceban', role: 'Waiter' },
 ];
+=======
+import { ProductsManager } from '../components/ProductsManager';
+import { IngredientsManager } from '../components/IngredientsManager';
+>>>>>>> main
 
 export function ManagerDashboard() {
-  const { user, logout, orders, reservations, inventory, updateInventory, updateReservationStatus } = useApp();
+  const { user, logout, orders, reservations, inventory, updateReservationStatus } = useApp();
   const navigate = useNavigate();
+<<<<<<< HEAD
   const [selectedTab, setSelectedTab] = useState<'overview' | 'inventory' | 'reservations' | 'reports'>('overview');
   const [localInventoryItems, setLocalInventoryItems] = useState(inventory);
   const [newItemForm, setNewItemForm] = useState({
@@ -22,6 +28,9 @@ export function ManagerDashboard() {
     unit: '',
     minStock: '',
   });
+=======
+  const [selectedTab, setSelectedTab] = useState<'overview' | 'inventory' | 'reservations' | 'reports' | 'products'>('overview');
+>>>>>>> main
 
   const handleLogout = () => {
     logout();
@@ -143,7 +152,8 @@ export function ManagerDashboard() {
             { id: 'overview', label: 'Overview', icon: TrendingUp },
             { id: 'inventory', label: 'Inventory', icon: Package },
             { id: 'reservations', label: 'Reservations', icon: Calendar },
-            { id: 'reports', label: 'Reports', icon: Users }
+            { id: 'reports', label: 'Reports', icon: Users },
+            { id: 'products', label: 'Products (DB)', icon: Database }
           ].map(tab => (
             <Button
               key={tab.id}
@@ -233,6 +243,7 @@ export function ManagerDashboard() {
         )}
 
         {selectedTab === 'inventory' && (
+<<<<<<< HEAD
           <form onSubmit={handleAddItemSubmit}>
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-white">Inventory Management</h2>
@@ -323,7 +334,18 @@ export function ManagerDashboard() {
               })}
             </div>
           </form>
+=======
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-6">Inventory Management</h2>
+            <p className="text-gray-400 text-sm mb-8">
+              Manage ingredients stored in the SQL Server database via the ASP.NET Core API
+              (<span className="text-blue-400 font-mono">http://localhost:5224/api/Ingredients</span>).
+            </p>
+            <IngredientsManager />
+          </div>
+>>>>>>> main
         )}
+
 
         {selectedTab === 'reservations' && (
           <div>
@@ -437,6 +459,17 @@ export function ManagerDashboard() {
             <Button className="mt-6 w-full h-12">
               Generate Full Report
             </Button>
+          </div>
+        )}
+
+        {selectedTab === 'products' && (
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-6">Products Management</h2>
+            <p className="text-gray-400 text-sm mb-8">
+              Manage products stored in the SQL Server database via the ASP.NET Core API
+              (<span className="text-blue-400 font-mono">http://localhost:5224/api/Products</span>).
+            </p>
+            <ProductsManager />
           </div>
         )}
       </div>
