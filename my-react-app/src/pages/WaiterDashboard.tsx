@@ -8,8 +8,8 @@ export function WaiterDashboard() {
   const { user, logout, tables, updateTableStatus, orders, updateOrderStatus } = useApp();
   const navigate = useNavigate();
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
-  const currentOrders = orders;
-  const recentHistoryOrders: typeof orders = [];
+  const currentOrders = orders.filter((order) => !order.finalized);
+  const recentHistoryOrders = orders.filter((order) => order.finalized).slice(0, 3);
 
   const tableStatusStyles = {
     free: {
