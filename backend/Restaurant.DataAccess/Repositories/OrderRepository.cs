@@ -25,3 +25,25 @@ public class OrderRepository : Repository<Order>, IOrderRepository
             .OrderByDescending(o => o.CreatedAt)
             .ToListAsync();
     }
+    
+    public async Task<IEnumerable<Order>> GetByClientIdWithDetailsAsync(int clientId)
+    {
+        return await _dbSet
+            .Where(o => o.ClientId == clientId)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+    }
+
+    public async Task<Order?> GetByIdWithDetailsAsync(int id)
+    {
+        return await _dbSet
+            .Include(o => o.Client)
+            .Include(o => o.Waiter)
+            .Include(o => o.Table)
+            .Include(o => o.OrderItems)
+                .ThenInclude(oi => oi.Product)
+            .FirstOrDefaultAsync(o => o.Id == id);
+    }
+}
