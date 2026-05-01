@@ -57,3 +57,72 @@ public class OrderService : IOrderService
             IsPaid = false,
             TotalAmount = 0
         };
+
+   foreach (var itemDto in dto.Items)
+        {
+            var product = await _session.Products.GetByIdAsync(itemDto.ProductId);
+            if (product != null)
+            {
+                var item = new OrderItem
+                {
+                    ProductId = product.Id,
+                    Quantity = itemDto.Quantity,
+                    UnitPrice = product.Price
+                };
+
+                order.OrderItems.Add(item);
+                order.TotalAmount += item.Quantity * item.UnitPrice;
+            }
+        }
+
+        await _session.Orders.AddAsync(order);
+
+        if (order.TableId.HasValue)
+        {
+            var table = await _session.Tables.GetByIdAsync(order.TableId.Value);
+            if (table != null)
+            {
+                table.IsOccupied = true;
+                _session.Tables.Update(table);
+            }
+        }
+
+        await _session.SaveChangesAsync();
+
+        var createdOrder = await _session.Orders.GetByIdWithDetailsAsync(order.Id);
+        return _mapper.Map<OrderDto>(createdOrder!);
+    }
+
+    public async Task UpdateOrderStatusAsync(int id, UpdateOrderStatusDto dto)
+    {
+        var o = await _session.Orders.GetByIdAsync(id);
+        if (o != null)
+        {
+            o.Status = dto.Status;
+
+            if ((o.Status == OrderStatus.Delivered || o.Status == OrderStatus.Cancelled) && o.TableId.HasValue)
+            {
+                var table = await _session.Tables.GetByIdAsync(o.TableId.Value);
+                if (table != null)
+                {
+                    table.IsOccupied = false;
+                    _session.Tables.Update(table);
+                }
+            }
+
+            _session.Orders.Update(o);
+            await _session.SaveChangesAsync();
+        }
+    }
+
+    public async Task UpdateOrderPaymentAsync(int id, bool isPaid)
+    {
+        var o = await _session.Orders.GetByIdAsync(id);
+        if (o != null)
+        {
+            o.IsPaid = isPaid;
+            _session.Orders.Update(o);
+            await _session.SaveChangesAsync();
+        }
+    }
+}
