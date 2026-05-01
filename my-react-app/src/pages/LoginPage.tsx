@@ -126,6 +126,16 @@ export function LoginPage() {
         </div>
 
         <div className="text-center mt-6">
+          <p className="text-sm text-gray-400 mb-3">
+            Don't have an account?{' '}
+            <button
+              type="button"
+              onClick={() => navigate('/register')}
+              className="text-blue-400 hover:text-blue-300 transition-colors"
+            >
+              Register
+            </button>
+          </p>
           <Button
             onClick={() => navigate('/')}
             variant="ghost"

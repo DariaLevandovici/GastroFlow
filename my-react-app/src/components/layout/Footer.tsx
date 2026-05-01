@@ -70,6 +70,11 @@ export function Footer() {
                 </a>
               </li>
               <li>
+                <Link to="/feedback" className="text-gray-500 hover:text-white text-sm transition-colors">
+                  Feedback
+                </Link>
+              </li>
+              <li>
                 <a href="#cookies" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Cookie Policy
                 </a>

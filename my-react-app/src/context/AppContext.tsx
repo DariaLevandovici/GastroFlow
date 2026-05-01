@@ -22,6 +22,7 @@ interface Order {
   comment?: string;
   origin?: 'client' | 'waiter';
   createdByUserId?: string;
+  finalized?: boolean;
 }
 
 interface Reservation {
@@ -39,7 +40,7 @@ interface Table {
   id: number;
   number: number;
   seats: number;
-  status: 'free' | 'occupied';
+  status: 'free' | 'occupied' | 'reserved';
 }
 
 interface User {
@@ -69,16 +70,19 @@ interface AppContextType {
   orders: Order[];
   addOrder: (order: Omit<Order, 'id' | 'createdAt'>) => void;
   updateOrderStatus: (id: string, status: Order['status']) => void;
+  finalizeOrder: (id: string) => void;
   cancelOrder: (id: string) => void;
   reservations: Reservation[];
-  addReservation: (reservation: Omit<Reservation, 'id' | 'status'>) => void;
+  addReservation: (reservation: Omit<Reservation, 'id' | 'status'>) => boolean;
   updateReservationStatus: (id: string, status: Reservation['status']) => void;
   tables: Table[];
-  updateTableStatus: (id: number, status: 'free' | 'occupied') => void;
+  updateTableStatus: (id: number, status: Table['status']) => void;
   inventory: InventoryItem[];
   updateInventory: (id: string, quantity: number) => void;
   unavailableItems: string[];
+  unavailableIngredients: string[];
   setItemAvailability: (itemName: string, available: boolean) => void;
+  setIngredientAvailability: (ingredientName: string, available: boolean) => void;
   searchQuery: string;
   setSearchQuery: (query: string) => void;
 }
@@ -117,6 +121,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     { id: 'INV005', name: 'Salmon', quantity: 18, unit: 'kg', minStock: 8 },
   ]);
   const [unavailableItems, setUnavailableItems] = useState<string[]>([]);
+  const [unavailableIngredients, setUnavailableIngredients] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
   const login = (email: string, password: string, role: 'client' | 'staff') => {
@@ -176,6 +181,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setOrders(prev => prev.map(order => order.id === id ? { ...order, status } : order));
   };
 
+  const finalizeOrder = (id: string) => {
+    setOrders(prev => prev.map(order => order.id === id ? { ...order, finalized: true } : order));
+  };
+
   const cancelOrder = (id: string) => {
     const order = orders.find(o => o.id === id);
     if (order && (order.status === 'draft' || order.status === 'confirmed')) {
@@ -190,13 +199,28 @@ export function AppProvider({ children }: { children: ReactNode }) {
       status: 'pending'
     };
     setReservations(prev => [newReservation, ...prev]);
+
+    let reservedTable = false;
+    setTables(prev => {
+      const firstFreeTable = prev.find(table => table.status === 'free');
+      if (!firstFreeTable) {
+        return prev;
+      }
+
+      reservedTable = true;
+      return prev.map(table =>
+        table.id === firstFreeTable.id ? { ...table, status: 'reserved' } : table
+      );
+    });
+
+    return reservedTable;
   };
 
   const updateReservationStatus = (id: string, status: Reservation['status']) => {
     setReservations(prev => prev.map(res => res.id === id ? { ...res, status } : res));
   };
 
-  const updateTableStatus = (id: number, status: 'free' | 'occupied') => {
+  const updateTableStatus = (id: number, status: Table['status']) => {
     setTables(prev => prev.map(table => table.id === id ? { ...table, status } : table));
   };
 
@@ -207,6 +231,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const setItemAvailability = (itemName: string, available: boolean) => {
     setUnavailableItems(prev => 
       available ? prev.filter(name => name !== itemName) : [...prev, itemName]
+    );
+  };
+
+  const setIngredientAvailability = (ingredientName: string, available: boolean) => {
+    setUnavailableIngredients(prev =>
+      available ? prev.filter(name => name !== ingredientName) : [...prev, ingredientName]
     );
   };
 
@@ -223,6 +253,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       orders,
       addOrder,
       updateOrderStatus,
+      finalizeOrder,
       cancelOrder,
       reservations,
       addReservation,
@@ -232,7 +263,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
       inventory,
       updateInventory,
       unavailableItems,
+      unavailableIngredients,
       setItemAvailability,
+      setIngredientAvailability,
       searchQuery,
       setSearchQuery
     }}>

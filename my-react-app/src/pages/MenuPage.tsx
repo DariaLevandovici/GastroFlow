@@ -12,7 +12,7 @@ import { getMenuCategories, getMenuItems, type MenuItem } from '../services/menu
 const dietaryOptions = ['All', 'vegan', 'vegetarian', 'gluten-free'];
 
 export function MenuPage() {
-  const { unavailableItems } = useApp();
+  const { unavailableItems, searchQuery } = useApp();
   const [searchParams] = useSearchParams();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>(['All']);
@@ -58,7 +58,7 @@ export function MenuPage() {
   }, []);
 
   const filteredItems = menuItems.filter(item => {
-    // Global search (name or description — ingredients may be empty from API)
+    // Local search (name, description, or ingredients) + global search query from context
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       const nameMatch = item.name.toLowerCase().includes(q);
@@ -67,7 +67,15 @@ export function MenuPage() {
       if (!nameMatch && !descMatch && !ingMatch) return false;
     }
 
-    // Category filter (all API items have category 'Menu' until backend is extended)
+    // Also apply global search query from the navbar (AppContext)
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      const nameMatch = item.name.toLowerCase().includes(q);
+      const ingMatch = item.ingredients.some(ing => ing.toLowerCase().includes(q));
+      if (!nameMatch && !ingMatch) return false;
+    }
+
+    // Category filter
     if (selectedCategory !== 'All' && item.category !== selectedCategory) return false;
 
     // Dietary filter (no-op when backend returns no dietary data)
@@ -89,8 +97,8 @@ export function MenuPage() {
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
-      <div className="container mx-auto px-6">
-        <div className="flex gap-8">
+      <div className="container mx-auto px-4 sm:px-6">
+        <div className="flex gap-6 lg:gap-8">
           {/* Sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0 self-start">
             <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain bg-[#242424] rounded-2xl p-6 border border-gray-800">
@@ -179,7 +187,7 @@ export function MenuPage() {
           <Button
             onClick={() => setShowFilters(!showFilters)}
             size="icon"
-            className="lg:hidden fixed bottom-6 right-6 z-40 size-12 rounded-xl shadow-lg"
+            className="lg:hidden fixed bottom-4 right-4 z-40 size-12 rounded-xl shadow-lg sm:bottom-6 sm:right-6"
           >
             <Filter className="w-6 h-6" />
           </Button>
@@ -200,9 +208,9 @@ export function MenuPage() {
           )}
 
           {/* Main Content */}
-          <div className="flex-1">
+          <div className="flex-1 pb-20 lg:pb-0">
             {/* Search bar */}
-            <div className="mb-6 flex items-center bg-[#242424] border border-gray-700 rounded-xl px-4 py-2 gap-3 focus-within:border-blue-600 transition-colors">
+            <div className="mb-5 flex items-center gap-3 rounded-xl border border-gray-700 bg-[#242424] px-4 py-2 transition-colors focus-within:border-blue-600 sm:mb-6">
               <Search className="w-5 h-5 text-gray-400 flex-shrink-0" />
               <Input
                 type="text"
@@ -218,8 +226,8 @@ export function MenuPage() {
               )}
             </div>
 
-            <div className="mb-8">
-              <h1 className="text-4xl font-bold text-white mb-2">Our Menu</h1>
+            <div className="mb-6 sm:mb-8">
+              <h1 className="mb-2 text-3xl font-bold text-white sm:text-4xl">Our Menu</h1>
               <p className="text-gray-400">
                 Showing {filteredItems.length} of {menuItems.length} items
               </p>
@@ -241,11 +249,11 @@ export function MenuPage() {
             )}
 
             {!isLoadingMenu && !menuError && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
               {filteredItems.map(item => (
                 <Card
                   key={item.id}
-                  className="overflow-hidden hover:border-blue-700 transition-all hover:scale-[1.02] flex flex-col h-full"
+                  className="flex h-full flex-col overflow-hidden transition-transform duration-300 ease-out hover:scale-[1.02] hover:border-blue-700"
                 >
                   <div className="h-48 overflow-hidden flex-shrink-0">
                     <img
@@ -254,10 +262,10 @@ export function MenuPage() {
                       className="w-full h-full object-cover"
                     />
                   </div>
-                  <div className="p-6 flex flex-col flex-grow">
-                    <div className="flex justify-between items-start mb-3">
-                      <h3 className="text-xl font-bold text-white">{item.name}</h3>
-                      <span className="text-blue-400 font-bold text-lg">{item.price} MDL</span>
+                  <div className="flex flex-grow flex-col p-4 sm:p-6">
+                    <div className="mb-3 flex items-start justify-between gap-3">
+                      <h3 className="text-lg font-bold text-white sm:text-xl">{item.name}</h3>
+                      <span className="text-lg font-bold text-blue-400">{item.price} MDL</span>
                     </div>
                     <p className="text-gray-400 text-sm mb-3">{item.description}</p>
 
