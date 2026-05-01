@@ -1,3 +1,5 @@
+import { Link } from 'react-router';
+
 export function Footer() {
   return (
     <footer className="bg-[#0d0d0d] border-t border-gray-900 py-12">
@@ -44,6 +46,11 @@ export function Footer() {
                 <a href="#career" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Career
                 </a>
+              </li>
+              <li>
+                <Link to="/feedback" className="text-gray-500 hover:text-white text-sm transition-colors">
+                  Feedback
+                </Link>
               </li>
             </ul>
           </div>

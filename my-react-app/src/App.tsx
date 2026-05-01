@@ -1,13 +1,21 @@
-import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Footer";
-import { HomePage } from "@/pages/Home/sections";
+import { Outlet, RouterProvider } from 'react-router';
+import { router } from './routes';
+import { AppProvider } from './context/AppContext';
+import { ScrollToTop } from './components/ScrollToTop';
+
+export function AppLayout() {
+  return (
+    <>
+      <ScrollToTop />
+      <Outlet />
+    </>
+  );
+}
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-[#1a1a1a]">
-      <Header />
-      <HomePage />
-      <Footer />
-    </div>
+    <AppProvider>
+      <RouterProvider router={router} />
+    </AppProvider>
   );
 }

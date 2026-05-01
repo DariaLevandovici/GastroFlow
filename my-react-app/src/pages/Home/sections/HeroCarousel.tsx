@@ -1,6 +1,7 @@
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
+import { Button } from '../../../ui/button';
 
 const carouselImages = [
   {
@@ -61,9 +62,9 @@ export function HeroCarousel() {
                   <div className="absolute bottom-0 left-0 right-0 p-12 text-white">
                     <h2 className="text-5xl font-bold mb-4">{image.title}</h2>
                     <p className="text-xl text-gray-200 mb-8">{image.description}</p>
-                    <button className="bg-blue-700 hover:bg-blue-600 text-white px-8 py-3 rounded-full transition-colors">
+                    <Button size="lg" className="px-8 shadow-sm">
                       Order Now
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </div>
