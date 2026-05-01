@@ -32,3 +32,30 @@ public class RecipesController : ControllerBase
         if (recipe == null) return NotFound();
         return Ok(recipe);
     }
+    
+    [HttpPost]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Create([FromBody] CreateRecipeDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        var created = await _recipeService.CreateRecipeAsync(dto);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+    }
+
+    [HttpPut("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Update(int id, [FromBody] CreateRecipeDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        await _recipeService.UpdateRecipeAsync(id, dto);
+        return NoContent();
+    }
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await _recipeService.DeleteRecipeAsync(id);
+        return NoContent();
+    }
+}
