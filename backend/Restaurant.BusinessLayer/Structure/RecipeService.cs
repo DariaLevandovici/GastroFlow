@@ -60,3 +60,29 @@ public class RecipeService : IRecipeService
         var created = await GetRecipesQuery().FirstOrDefaultAsync(x => x.Id == recipe.Id);
         return MapToDto(created!);
     }
+    
+    public async Task UpdateRecipeAsync(int id, CreateRecipeDto dto)
+    {
+        var r = await _session.Recipes.GetByIdAsync(id);
+        if (r != null)
+        {
+            r.Instructions = dto.Instructions;
+            r.IngredientsList = dto.IngredientsList;
+            r.PreparationTimeMinutes = dto.PreparationTimeMinutes;
+            r.ProductId = dto.ProductId;
+            
+            _session.Recipes.Update(r);
+            await _session.SaveChangesAsync();
+        }
+    }
+
+    public async Task DeleteRecipeAsync(int id)
+    {
+        var r = await _session.Recipes.GetByIdAsync(id);
+        if (r != null)
+        {
+            _session.Recipes.Remove(r);
+            await _session.SaveChangesAsync();
+        }
+    }
+}
