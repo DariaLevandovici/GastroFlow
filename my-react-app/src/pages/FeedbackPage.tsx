@@ -10,11 +10,36 @@ export function FeedbackPage() {
     email: '',
     message: ''
   });
+  const [successMessage, setSuccessMessage] = useState('');
+  const [errors, setErrors] = useState({
+    name: '',
+    email: '',
+    message: ''
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Feedback submitted successfully!');
+
+    const nextErrors = {
+      name: formData.name.trim() ? '' : 'Name is required.',
+      email: formData.email.trim() ? '' : 'Email is required.',
+      message: formData.message.trim() ? '' : 'Message is required.'
+    };
+
+    setErrors(nextErrors);
+
+    if (nextErrors.name || nextErrors.email || nextErrors.message) {
+      setSuccessMessage('');
+      return;
+    }
+
+    setSuccessMessage('Thank you for your feedback');
     setFormData({
+      name: '',
+      email: '',
+      message: ''
+    });
+    setErrors({
       name: '',
       email: '',
       message: ''
@@ -31,6 +56,12 @@ export function FeedbackPage() {
 
         <div className="bg-[#242424] rounded-2xl p-8 border border-gray-800">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {successMessage && (
+              <div className="rounded-lg border border-green-700 bg-green-900/20 px-4 py-3 text-sm text-green-300">
+                {successMessage}
+              </div>
+            )}
+
             <div>
               <label className="flex items-center gap-2 text-white mb-3">
                 <User className="w-5 h-5 text-blue-400" />
@@ -38,11 +69,15 @@ export function FeedbackPage() {
               </label>
               <Input
                 type="text"
-                required
                 placeholder="Your name"
                 value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, name: e.target.value });
+                  setErrors({ ...errors, name: '' });
+                  setSuccessMessage('');
+                }}
               />
+              {errors.name && <p className="mt-2 text-sm text-red-400">{errors.name}</p>}
             </div>
 
             <div>
@@ -52,11 +87,15 @@ export function FeedbackPage() {
               </label>
               <Input
                 type="email"
-                required
                 placeholder="you@example.com"
                 value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, email: e.target.value });
+                  setErrors({ ...errors, email: '' });
+                  setSuccessMessage('');
+                }}
               />
+              {errors.email && <p className="mt-2 text-sm text-red-400">{errors.email}</p>}
             </div>
 
             <div>
@@ -66,11 +105,15 @@ export function FeedbackPage() {
               </label>
               <Textarea
                 rows={6}
-                required
                 placeholder="Write your feedback here..."
                 value={formData.message}
-                onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+                onChange={(e) => {
+                  setFormData({ ...formData, message: e.target.value });
+                  setErrors({ ...errors, message: '' });
+                  setSuccessMessage('');
+                }}
               />
+              {errors.message && <p className="mt-2 text-sm text-red-400">{errors.message}</p>}
             </div>
 
             <Button type="submit" className="w-full h-12">

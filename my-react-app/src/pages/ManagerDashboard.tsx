@@ -9,6 +9,7 @@ import { IngredientsManager } from '../components/IngredientsManager';
 export function ManagerDashboard() {
   const { user, logout, orders, reservations, inventory, updateReservationStatus } = useApp();
   const navigate = useNavigate();
+  // Resolution: keep the 'products' tab introduced by the backend branch (main)
   const [selectedTab, setSelectedTab] = useState<'overview' | 'inventory' | 'reservations' | 'reports' | 'products'>('overview');
 
   const handleLogout = () => {
@@ -112,6 +113,17 @@ export function ManagerDashboard() {
         {/* Tab Content */}
         {selectedTab === 'overview' && (
           <div className="space-y-8">
+            <div className="bg-[#242424] rounded-2xl p-6 border border-gray-800">
+              <h2 className="text-2xl font-bold text-white mb-2">Create Staff Account</h2>
+              <p className="text-gray-400 mb-6">Open the dedicated page to create and manage staff accounts.</p>
+              <Button
+                onClick={() => navigate('/dashboard/manager/staff-accounts')}
+                className="w-full md:w-auto px-6"
+              >
+                Create Staff Account
+              </Button>
+            </div>
+
             {/* Recent Orders */}
             <div>
               <h2 className="text-2xl font-bold text-white mb-6">Recent Orders</h2>
@@ -152,17 +164,17 @@ export function ManagerDashboard() {
           </div>
         )}
 
+        {/* Resolution: inventory tab now uses IngredientsManager (real DB) instead of the mock inline form */}
         {selectedTab === 'inventory' && (
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">Inventory Management</h2>
             <p className="text-gray-400 text-sm mb-8">
-              Manage ingredients stored in the SQL Server database via the ASP.NET Core API
+              Manage ingredients stored in the PostgreSQL database via the ASP.NET Core API
               (<span className="text-blue-400 font-mono">http://localhost:5224/api/Ingredients</span>).
             </p>
             <IngredientsManager />
           </div>
         )}
-
 
         {selectedTab === 'reservations' && (
           <div>
@@ -283,7 +295,7 @@ export function ManagerDashboard() {
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">Products Management</h2>
             <p className="text-gray-400 text-sm mb-8">
-              Manage products stored in the SQL Server database via the ASP.NET Core API
+              Manage products stored in the PostgreSQL database via the ASP.NET Core API
               (<span className="text-blue-400 font-mono">http://localhost:5224/api/Products</span>).
             </p>
             <ProductsManager />

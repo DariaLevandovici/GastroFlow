@@ -6,8 +6,9 @@ import { Button } from '../ui/button';
 
 export function WaiterBillPage() {
   const navigate = useNavigate();
-  const { orders, tables } = useApp();
+  const { orders, tables, updateTableStatus, finalizeOrder } = useApp();
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
+  const [splitCountInput, setSplitCountInput] = useState('2');
 
   // Filter orders for dine-in that are ready or delivered
   const tableOrders = orders.filter(o => o.type === 'dine-in' && (o.status === 'ready' || o.status === 'delivered'));
@@ -19,6 +20,11 @@ export function WaiterBillPage() {
   const totalBill = selectedTableOrders.reduce((sum, order) => sum + order.total, 0);
   const tax = totalBill * 0.1;
   const grandTotal = totalBill + tax;
+  const parsedSplitCount = Number(splitCountInput);
+  const isSplitCountInvalid =
+    splitCountInput.trim() === '' || !Number.isInteger(parsedSplitCount) || parsedSplitCount < 1;
+  const splitCount = isSplitCountInvalid ? 1 : parsedSplitCount;
+  const amountPerPerson = grandTotal / splitCount;
 
   const handlePrintBill = () => {
     window.print();
@@ -29,7 +35,13 @@ export function WaiterBillPage() {
       alert('Please select a table');
       return;
     }
+    selectedTableOrders.forEach((order) => finalizeOrder(order.id));
     alert(`Bill generated for Table ${selectedTable}\nTotal: ${grandTotal.toFixed(2)} MDL`);
+    const relatedTable = tables.find((table) => table.number === selectedTable);
+    if (relatedTable) {
+      updateTableStatus(relatedTable.id, 'free');
+    }
+    setSelectedTable(null);
   };
 
   return (
@@ -161,6 +173,29 @@ export function WaiterBillPage() {
                     <div className="flex justify-between text-2xl font-bold">
                       <span className="text-white">Total</span>
                       <span className="text-blue-400">566.50 MDL</span>
+                    </div>
+                  </div>
+
+                  <div className="mb-8 rounded-2xl border border-gray-800 bg-[#1f1f1f] p-6">
+                    <h3 className="mb-4 text-xl font-bold text-white">Split Bill</h3>
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                      <div className="max-w-xs">
+                        <label className="mb-2 block text-sm text-gray-400">Number of People</label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={splitCountInput}
+                          onChange={(e) => setSplitCountInput(e.target.value)}
+                          className="h-11 w-full rounded-lg border border-gray-700 bg-[#242424] px-4 text-white outline-none transition-colors focus:border-blue-600"
+                        />
+                        {isSplitCountInvalid && (
+                          <p className="mt-2 text-sm text-red-400">Number of people must be at least 1.</p>
+                        )}
+                      </div>
+                      <div className="rounded-xl border border-blue-800 bg-blue-900/20 px-5 py-4">
+                        <p className="text-sm text-gray-400">Amount per person</p>
+                        <p className="text-2xl font-bold text-blue-400">{amountPerPerson.toFixed(2)} MDL</p>
+                      </div>
                     </div>
                   </div>
 
