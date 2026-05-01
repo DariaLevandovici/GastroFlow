@@ -58,3 +58,43 @@ public class ProductService : IProductService
     {
         var product = new Product
         {
+                 Name = dto.Name,
+            Description = dto.Description,
+            Price = dto.Price,
+            ImageUrl = dto.ImageUrl,
+            CategoryId = dto.CategoryId
+        };
+        await _session.Products.AddAsync(product);
+        await _session.SaveChangesAsync();
+
+        // Load category to return full Dto
+        var created = await GetProductsQuery().FirstOrDefaultAsync(x => x.Id == product.Id);
+        return MapToDto(created!);
+    }
+
+    public async Task UpdateProductAsync(int id, UpdateProductDto dto)
+    {
+        var p = await _session.Products.GetByIdAsync(id);
+        if (p != null)
+        {
+            p.Name = dto.Name;
+            p.Description = dto.Description;
+            p.Price = dto.Price;
+            p.ImageUrl = dto.ImageUrl;
+            p.CategoryId = dto.CategoryId;
+            
+            _session.Products.Update(p);
+            await _session.SaveChangesAsync();
+        }
+    }
+
+    public async Task DeleteProductAsync(int id)
+    {
+        var p = await _session.Products.GetByIdAsync(id);
+        if (p != null)
+        {
+            _session.Products.Remove(p);
+            await _session.SaveChangesAsync();
+        }
+    }
+}
