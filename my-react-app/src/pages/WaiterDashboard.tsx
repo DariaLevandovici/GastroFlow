@@ -8,6 +8,26 @@ export function WaiterDashboard() {
   const { user, logout, tables, updateTableStatus, orders, updateOrderStatus } = useApp();
   const navigate = useNavigate();
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
+  const currentOrders = orders.filter((order) => !order.finalized);
+  const recentHistoryOrders = orders.filter((order) => order.finalized).slice(0, 3);
+
+  const tableStatusStyles = {
+    free: {
+      card: 'bg-green-900/30 border-green-600',
+      label: 'text-green-400',
+      text: 'FREE',
+    },
+    occupied: {
+      card: 'bg-red-900/30 border-red-600',
+      label: 'text-red-400',
+      text: 'OCCUPIED',
+    },
+    reserved: {
+      card: 'bg-yellow-900/30 border-yellow-600',
+      label: 'text-yellow-400',
+      text: 'RESERVED',
+    },
+  } as const;
 
   const handleLogout = () => {
     logout();
@@ -68,18 +88,14 @@ export function WaiterDashboard() {
                   }}
                   variant="outline"
                   className={`h-auto p-6 border-2 transition-all ${
-                    table.status === 'occupied'
-                      ? 'bg-red-900/30 border-red-600'
-                      : 'bg-green-900/30 border-green-600'
+                    tableStatusStyles[table.status].card
                   } ${selectedTable === table.id ? 'ring-4 ring-blue-600/30' : ''}`}
                 >
                   <div className="text-center">
                     <p className="text-2xl font-bold text-white mb-1">#{table.number}</p>
                     <p className="text-sm text-gray-400">{table.seats} seats</p>
-                    <p className={`text-xs mt-2 font-semibold ${
-                      table.status === 'occupied' ? 'text-red-400' : 'text-green-400'
-                    }`}>
-                      {table.status.toUpperCase()}
+                    <p className={`text-xs mt-2 font-semibold ${tableStatusStyles[table.status].label}`}>
+                      {tableStatusStyles[table.status].text}
                     </p>
                   </div>
                 </Button>
@@ -96,14 +112,18 @@ export function WaiterDashboard() {
                 <div className="w-4 h-4 rounded bg-red-600"></div>
                 <span className="text-sm text-gray-400">Occupied</span>
               </div>
+              <div className="flex items-center gap-2">
+                <div className="w-4 h-4 rounded bg-yellow-600"></div>
+                <span className="text-sm text-gray-400">Reserved</span>
+              </div>
             </div>
           </div>
 
           {/* Orders */}
           <div>
-            <h2 className="text-2xl font-bold text-white mb-6">Active Orders</h2>
+            <h2 className="text-2xl font-bold text-white mb-6">Current Orders</h2>
             <div className="space-y-4 max-h-[700px] overflow-y-auto">
-              {orders.filter(o => o.status !== 'delivered').map(order => (
+              {currentOrders.map(order => (
                 <div key={order.id} className="bg-[#242424] rounded-2xl p-6 border border-gray-800">
                   <div className="flex justify-between items-start mb-4">
                     <div>
@@ -167,9 +187,9 @@ export function WaiterDashboard() {
                 </div>
               ))}
 
-              {orders.filter(o => o.status !== 'delivered').length === 0 && (
+              {currentOrders.length === 0 && (
                 <div className="bg-[#242424] rounded-2xl p-8 border border-gray-800 text-center">
-                  <p className="text-gray-400">No active orders</p>
+                  <p className="text-gray-400">No current orders</p>
                 </div>
               )}
             </div>
@@ -178,7 +198,7 @@ export function WaiterDashboard() {
             <div className="mt-8">
               <h3 className="text-xl font-bold text-white mb-4">Recent History</h3>
               <div className="space-y-3">
-                {orders.filter(o => o.status === 'delivered').slice(0, 3).map(order => (
+                {recentHistoryOrders.map(order => (
                   <div key={order.id} className="bg-[#242424] rounded-lg p-4 border border-gray-800">
                     <div className="flex justify-between items-center">
                       <span className="text-white">Order #{order.id}</span>
@@ -186,6 +206,11 @@ export function WaiterDashboard() {
                     </div>
                   </div>
                 ))}
+                {recentHistoryOrders.length === 0 && (
+                  <div className="bg-[#242424] rounded-lg p-4 border border-gray-800 text-center">
+                    <span className="text-gray-400 text-sm">No recent history yet</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -8,7 +8,18 @@ import { Input } from '../ui/input';
 import { getMenuItems, type MenuItem } from '../services/menuService';
 
 export function CookDashboard() {
-  const { user, logout, orders, updateOrderStatus, unavailableItems, setItemAvailability, inventory, updateInventory } = useApp();
+  const {
+    user,
+    logout,
+    orders,
+    updateOrderStatus,
+    unavailableItems,
+    unavailableIngredients,
+    setItemAvailability,
+    setIngredientAvailability,
+    inventory,
+    updateInventory
+  } = useApp();
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
@@ -41,6 +52,10 @@ export function CookDashboard() {
   const incomingOrders = orders.filter(o => o.status === 'confirmed');
   const preparingOrders = orders.filter(o => o.status === 'in-preparation');
   const lowStockItems = inventory.filter(item => item.quantity <= item.minStock);
+  const itemHasUnavailableIngredient = (item: typeof menuItems[number]) =>
+    item.ingredients.some((ingredient) =>
+      unavailableIngredients.includes(ingredient.toLowerCase())
+    );
 
   useEffect(() => {
     let isMounted = true;
@@ -71,12 +86,25 @@ export function CookDashboard() {
   // Filter menu items for availability
   const filteredMenuItems = menuItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(menuSearchTerm.toLowerCase());
+    const isEffectivelyUnavailable =
+      unavailableItems.includes(item.name) || itemHasUnavailableIngredient(item);
     const matchesFilter = menuFilter === 'All' || 
-                         (menuFilter === 'Available' && !unavailableItems.includes(item.name)) ||
-                         (menuFilter === 'Unavailable' && unavailableItems.includes(item.name));
+                         (menuFilter === 'Available' && !isEffectivelyUnavailable) ||
+                         (menuFilter === 'Unavailable' && isEffectivelyUnavailable);
     return matchesSearch && matchesFilter;
   });
 
+<<<<<<< HEAD
+  const ingredientItems = Array.from(
+    new Set(menuItems.flatMap((item) => item.ingredients.map((ingredient) => ingredient.toLowerCase())))
+  ).sort((a, b) => a.localeCompare(b));
+
+  const toggleIngredientAvailability = (ingredient: string) => {
+    setIngredientAvailability(ingredient, unavailableIngredients.includes(ingredient));
+  };
+
+=======
+>>>>>>> main
   return (
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
       <div className="container mx-auto px-6 max-w-7xl">
@@ -252,11 +280,13 @@ export function CookDashboard() {
             {!isLoadingMenu && !menuError && (
               <>
             {filteredMenuItems.map(item => {
-              const isUnavailable = unavailableItems.includes(item.name);
+              const isManuallyUnavailable = unavailableItems.includes(item.name);
+              const isBlockedByIngredient = itemHasUnavailableIngredient(item);
+              const isUnavailable = isManuallyUnavailable || isBlockedByIngredient;
               return (
                 <Button
                   key={item.id}
-                  onClick={() => setItemAvailability(item.name, isUnavailable)}
+                  onClick={() => setItemAvailability(item.name, isManuallyUnavailable)}
                   variant="outline"
                   className={`h-auto p-4 border-2 transition-all text-left ${
                     isUnavailable
@@ -265,6 +295,32 @@ export function CookDashboard() {
                   }`}
                 >
                   <p className="text-white font-bold text-sm mb-1">{item.name}</p>
+                  <p className={`text-xs ${isUnavailable ? 'text-red-400' : 'text-green-400'}`}>
+                    {isBlockedByIngredient ? 'Ingredient unavailable' : isUnavailable ? 'Unavailable' : 'Available'}
+                  </p>
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-white mb-6">Ingredients Availability</h2>
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
+            {ingredientItems.map((ingredient) => {
+              const isUnavailable = unavailableIngredients.includes(ingredient);
+              return (
+                <Button
+                  key={ingredient}
+                  onClick={() => toggleIngredientAvailability(ingredient)}
+                  variant="outline"
+                  className={`h-auto p-4 border-2 transition-all text-left ${
+                    isUnavailable
+                      ? 'bg-red-900/30 border-red-600'
+                      : 'bg-green-900/30 border-green-600'
+                  }`}
+                >
+                  <p className="text-white font-bold text-sm mb-1 capitalize">{ingredient}</p>
                   <p className={`text-xs ${isUnavailable ? 'text-red-400' : 'text-green-400'}`}>
                     {isUnavailable ? 'Unavailable' : 'Available'}
                   </p>

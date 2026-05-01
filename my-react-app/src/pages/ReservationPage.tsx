@@ -22,8 +22,12 @@ export function ReservationPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addReservation(formData);
-    alert('Reservation submitted successfully! We will confirm shortly.');
+    const reservedTable = addReservation(formData);
+    alert(
+      reservedTable
+        ? 'Reservation submitted successfully! A table was marked as reserved.'
+        : 'Reservation submitted successfully! We will confirm shortly.'
+    );
     navigate('/');
   };
 

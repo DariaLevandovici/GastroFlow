@@ -3,17 +3,79 @@ import { useApp } from '../context/AppContext';
 import { LogOut, TrendingUp, Package, Calendar, DollarSign, Users, AlertTriangle, Database } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Button } from '../ui/button';
+<<<<<<< HEAD
+import { Input } from '../ui/input';
+
+const mockStaffAccounts = [
+  { id: 1, name: 'Andrei Popa', role: 'Waiter' },
+  { id: 2, name: 'Elena Rusu', role: 'Cook' },
+  { id: 3, name: 'Mihai Ceban', role: 'Waiter' },
+];
+=======
 import { ProductsManager } from '../components/ProductsManager';
 import { IngredientsManager } from '../components/IngredientsManager';
+>>>>>>> main
 
 export function ManagerDashboard() {
   const { user, logout, orders, reservations, inventory, updateReservationStatus } = useApp();
   const navigate = useNavigate();
+<<<<<<< HEAD
+  const [selectedTab, setSelectedTab] = useState<'overview' | 'inventory' | 'reservations' | 'reports'>('overview');
+  const [localInventoryItems, setLocalInventoryItems] = useState(inventory);
+  const [newItemForm, setNewItemForm] = useState({
+    name: '',
+    quantity: '',
+    unit: '',
+    minStock: '',
+  });
+=======
   const [selectedTab, setSelectedTab] = useState<'overview' | 'inventory' | 'reservations' | 'reports' | 'products'>('overview');
+>>>>>>> main
 
   const handleLogout = () => {
     logout();
     navigate('/');
+  };
+
+  const handleAddItemSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const trimmedName = newItemForm.name.trim();
+    const trimmedUnit = newItemForm.unit.trim();
+    const quantity = Number(newItemForm.quantity);
+    const minStock = Number(newItemForm.minStock);
+
+    if (!trimmedName || !trimmedUnit || Number.isNaN(quantity) || Number.isNaN(minStock)) {
+      return;
+    }
+
+    const nextItemNumber = localInventoryItems.length + 1;
+    setLocalInventoryItems((prev) => [
+      ...prev,
+      {
+        id: `INV${String(nextItemNumber).padStart(3, '0')}`,
+        name: trimmedName,
+        quantity,
+        unit: trimmedUnit,
+        minStock,
+      },
+    ]);
+    setNewItemForm({
+      name: '',
+      quantity: '',
+      unit: '',
+      minStock: '',
+    });
+  };
+
+  const handleLocalInventoryChange = (id: string, quantity: number) => {
+    setLocalInventoryItems((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+    );
+
+    if (inventory.some((item) => item.id === id)) {
+      updateInventory(id, quantity);
+    }
   };
 
   // Statistics
@@ -112,6 +174,34 @@ export function ManagerDashboard() {
         {/* Tab Content */}
         {selectedTab === 'overview' && (
           <div className="space-y-8">
+            <div className="bg-[#242424] rounded-2xl p-6 border border-gray-800">
+              <h2 className="text-2xl font-bold text-white mb-2">Create Staff Account</h2>
+              <p className="text-gray-400 mb-6">Open the dedicated page to create and manage staff accounts.</p>
+              <Button
+                onClick={() => navigate('/dashboard/manager/staff-accounts')}
+                className="w-full md:w-auto px-6"
+              >
+                Create Staff Account
+              </Button>
+            </div>
+
+            <div className="bg-[#242424] rounded-2xl p-6 border border-gray-800">
+              <h2 className="text-2xl font-bold text-white mb-2">Staff Accounts</h2>
+              <p className="text-gray-400 mb-6">Current mock staff members in the system.</p>
+
+              <div className="space-y-3">
+                {mockStaffAccounts.map((staff) => (
+                  <div
+                    key={staff.id}
+                    className="flex items-center justify-between rounded-xl border border-gray-800 bg-[#1f1f1f] px-4 py-4"
+                  >
+                    <span className="font-semibold text-white">{staff.name}</span>
+                    <span className="text-sm text-blue-400">{staff.role}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             {/* Recent Orders */}
             <div>
               <h2 className="text-2xl font-bold text-white mb-6">Recent Orders</h2>
@@ -153,6 +243,98 @@ export function ManagerDashboard() {
         )}
 
         {selectedTab === 'inventory' && (
+<<<<<<< HEAD
+          <form onSubmit={handleAddItemSubmit}>
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-white">Inventory Management</h2>
+              <Button type="submit" className="px-6">
+                Add Item
+              </Button>
+            </div>
+
+            <div className="mb-6 grid grid-cols-1 gap-4 rounded-2xl border border-gray-800 bg-[#242424] p-6 md:grid-cols-2 xl:grid-cols-4">
+              <Input
+                type="text"
+                placeholder="Item name"
+                value={newItemForm.name}
+                onChange={(e) => setNewItemForm((prev) => ({ ...prev, name: e.target.value }))}
+              />
+              <Input
+                type="number"
+                min="0"
+                placeholder="Quantity"
+                value={newItemForm.quantity}
+                onChange={(e) => setNewItemForm((prev) => ({ ...prev, quantity: e.target.value }))}
+              />
+              <Input
+                type="text"
+                placeholder="Unit"
+                value={newItemForm.unit}
+                onChange={(e) => setNewItemForm((prev) => ({ ...prev, unit: e.target.value }))}
+              />
+              <Input
+                type="number"
+                min="0"
+                placeholder="Min stock"
+                value={newItemForm.minStock}
+                onChange={(e) => setNewItemForm((prev) => ({ ...prev, minStock: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {localInventoryItems.map(item => {
+                const isLowStock = item.quantity <= item.minStock;
+                return (
+                  <div
+                    key={item.id}
+                    className={`bg-[#242424] rounded-2xl p-6 border-2 ${
+                      isLowStock ? 'border-yellow-600' : 'border-gray-800'
+                    }`}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <h3 className="text-xl font-bold text-white">{item.name}</h3>
+                      {isLowStock && (
+                        <AlertTriangle className="w-5 h-5 text-yellow-400" />
+                      )}
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Current Stock:</span>
+                        <span className={`font-bold ${isLowStock ? 'text-yellow-400' : 'text-white'}`}>
+                          {item.quantity} {item.unit}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-400">Min Stock:</span>
+                        <span className="text-gray-400">{item.minStock} {item.unit}</span>
+                      </div>
+
+                      <div className="flex gap-2 mt-4">
+                        <Button
+                          type="button"
+                          onClick={() => handleLocalInventoryChange(item.id, item.quantity - 5)}
+                          variant="destructive"
+                          className="flex-1 bg-red-900/30 hover:bg-red-900/50 text-red-400 h-9"
+                        >
+                          -5
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={() => handleLocalInventoryChange(item.id, item.quantity + 10)}
+                          variant="success"
+                          className="flex-1 h-9"
+                        >
+                          +10
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </form>
+=======
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">Inventory Management</h2>
             <p className="text-gray-400 text-sm mb-8">
@@ -161,6 +343,7 @@ export function ManagerDashboard() {
             </p>
             <IngredientsManager />
           </div>
+>>>>>>> main
         )}
 
 
