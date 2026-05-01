@@ -58,11 +58,7 @@ export function MenuPage() {
   }, []);
 
   const filteredItems = menuItems.filter(item => {
-<<<<<<< HEAD
-    // Local and global search (name or ingredients)
-=======
-    // Global search (name or description — ingredients may be empty from API)
->>>>>>> main
+    // Local search (name, description, or ingredients) + global search query from context
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       const nameMatch = item.name.toLowerCase().includes(q);
@@ -71,7 +67,7 @@ export function MenuPage() {
       if (!nameMatch && !descMatch && !ingMatch) return false;
     }
 
-<<<<<<< HEAD
+    // Also apply global search query from the navbar (AppContext)
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
       const nameMatch = item.name.toLowerCase().includes(q);
@@ -80,9 +76,6 @@ export function MenuPage() {
     }
 
     // Category filter
-=======
-    // Category filter (all API items have category 'Menu' until backend is extended)
->>>>>>> main
     if (selectedCategory !== 'All' && item.category !== selectedCategory) return false;
 
     // Dietary filter (no-op when backend returns no dietary data)
@@ -240,9 +233,6 @@ export function MenuPage() {
               </p>
             </div>
 
-<<<<<<< HEAD
-            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
-=======
             {isLoadingMenu && (
               <div className="text-center py-16">
                 <p className="text-gray-400 text-lg">Loading menu...</p>
@@ -259,8 +249,7 @@ export function MenuPage() {
             )}
 
             {!isLoadingMenu && !menuError && (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
->>>>>>> main
+            <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2 xl:grid-cols-3">
               {filteredItems.map(item => (
                 <Card
                   key={item.id}

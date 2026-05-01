@@ -94,7 +94,7 @@ export function CookDashboard() {
     return matchesSearch && matchesFilter;
   });
 
-<<<<<<< HEAD
+  // Resolution: keep helpers from HEAD — they are consumed by the Ingredients Availability section below.
   const ingredientItems = Array.from(
     new Set(menuItems.flatMap((item) => item.ingredients.map((ingredient) => ingredient.toLowerCase())))
   ).sort((a, b) => a.localeCompare(b));
@@ -103,8 +103,7 @@ export function CookDashboard() {
     setIngredientAvailability(ingredient, unavailableIngredients.includes(ingredient));
   };
 
-=======
->>>>>>> main
+
   return (
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
       <div className="container mx-auto px-6 max-w-7xl">
@@ -269,7 +268,7 @@ export function CookDashboard() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {isLoadingMenu && (
               <p className="col-span-full text-center text-gray-400 py-8">Loading menu...</p>
@@ -277,9 +276,7 @@ export function CookDashboard() {
             {menuError && !isLoadingMenu && (
               <p className="col-span-full text-center text-red-400 py-8">{menuError}</p>
             )}
-            {!isLoadingMenu && !menuError && (
-              <>
-            {filteredMenuItems.map(item => {
+            {!isLoadingMenu && !menuError && filteredMenuItems.map(item => {
               const isManuallyUnavailable = unavailableItems.includes(item.name);
               const isBlockedByIngredient = itemHasUnavailableIngredient(item);
               const isUnavailable = isManuallyUnavailable || isBlockedByIngredient;
@@ -327,11 +324,10 @@ export function CookDashboard() {
                 </Button>
               );
             })}
-              </>
-            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
+
