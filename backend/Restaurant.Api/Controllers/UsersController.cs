@@ -36,3 +36,34 @@ public class UsersController : ControllerBase
         user.PasswordHash = string.Empty;
         return Ok(user);
     }
+     [HttpPost]
+    public async Task<IActionResult> Create([FromBody] RegisterDto dto)
+    {
+        if (!ModelState.IsValid) return BadRequest(ModelState);
+        
+        if (!System.Enum.TryParse<Role>(dto.Role, true, out var role))
+        {
+            return BadRequest(new { message = "Invalid role specified." });
+        }
+
+        var user = new User
+        {
+            FirstName = dto.FirstName,
+            LastName = dto.LastName,
+            Email = dto.Email,
+            Role = role,
+            CreatedAt = System.DateTime.UtcNow
+        };
+
+        var created = await _userService.CreateUserAsync(user, dto.Password);
+        created.PasswordHash = string.Empty;
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+    }
+
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await _userService.DeleteUserAsync(id);
+        return NoContent();
+    }
+}
