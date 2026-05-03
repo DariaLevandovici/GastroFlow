@@ -10,4 +10,6 @@ public class Ingredient
 
     public decimal MinStock { get; set; }
     public string Category { get; set; } = "";
+
+    public ICollection<ProductIngredient> ProductIngredients { get; set; } = new List<ProductIngredient>();
 }

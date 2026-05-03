@@ -7,9 +7,9 @@ namespace Restaurant.BusinessLayer.Core.Interfaces;
 public interface IProductService
 {
     Task<IEnumerable<ProductDto>> GetAllProductsAsync();
-    Task<IEnumerable<ProductDto>> GetProductsByCategoryAsync(int categoryId);
+    Task<IEnumerable<ProductDto>> GetProductsByCategoryAsync(string category);
     Task<ProductDto?> GetProductByIdAsync(int id);
-    Task<ProductDto> CreateProductAsync(CreateProductDto dto);
-    Task UpdateProductAsync(int id, UpdateProductDto dto);
+    Task<ProductDto> CreateProductAsync(ProductCreateUpdateDto dto);
+    Task UpdateProductAsync(int id, ProductCreateUpdateDto dto);
     Task DeleteProductAsync(int id);
 }

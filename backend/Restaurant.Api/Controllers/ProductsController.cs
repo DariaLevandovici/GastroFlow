@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Restaurant.DataAccess.Context;
 using Restaurant.Domain.Entities;
+using Restaurant.Domain.Models.Product;
 
 namespace Restaurant.Api.Controllers;
 
@@ -20,6 +21,7 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<IEnumerable<ProductDto>>> GetProducts()
     {
         var products = await _context.Products
+            .Include(p => p.MainImage)
             .Include(p => p.ProductIngredients)
                 .ThenInclude(pi => pi.Ingredient)
             .ToListAsync();
@@ -31,6 +33,7 @@ public class ProductsController : ControllerBase
     public async Task<ActionResult<ProductDto>> GetProduct(int id)
     {
         var product = await _context.Products
+            .Include(p => p.MainImage)
             .Include(p => p.ProductIngredients)
                 .ThenInclude(pi => pi.Ingredient)
             .FirstOrDefaultAsync(p => p.Id == id);
@@ -50,14 +53,20 @@ public class ProductsController : ControllerBase
             return BadRequest("A product with this name already exists");
         }
 
+        // Find the image by URL since frontend passes the URL string in Image
+        var imageEntity = await _context.Images.FirstOrDefaultAsync(i => i.Url == dto.Image);
+        if (imageEntity == null)
+        {
+            return BadRequest("Image not found or invalid image URL. Please upload the image first.");
+        }
+
         var product = new Product
         {
             Name = dto.Name!,
             Price = dto.Price,
             Description = dto.Description ?? "",
             Category = dto.Category ?? "Menu",
-            Image = dto.Image ?? "",
-            Ingredients = dto.Ingredients ?? "[]",
+            ImageId = imageEntity.Id,
             Dietary = dto.Dietary ?? "[]"
         };
 
@@ -78,6 +87,7 @@ public class ProductsController : ControllerBase
         
         // Reload with includes for proper DTO response mapping
         product = await _context.Products
+            .Include(p => p.MainImage)
             .Include(p => p.ProductIngredients)
                 .ThenInclude(pi => pi.Ingredient)
             .FirstAsync(p => p.Id == product.Id);
@@ -89,6 +99,7 @@ public class ProductsController : ControllerBase
     public async Task<IActionResult> UpdateProduct(int id, ProductCreateUpdateDto dto)
     {
         var product = await _context.Products
+            .Include(p => p.MainImage)
             .Include(p => p.ProductIngredients)
             .FirstOrDefaultAsync(p => p.Id == id);
 
@@ -101,12 +112,18 @@ public class ProductsController : ControllerBase
             return BadRequest("A product with this name already exists");
         }
 
+        // Find the image by URL since frontend passes the URL string in Image
+        var imageEntity = await _context.Images.FirstOrDefaultAsync(i => i.Url == dto.Image);
+        if (imageEntity == null)
+        {
+            return BadRequest("Image not found or invalid image URL. Please upload the image first.");
+        }
+
         product.Name = dto.Name!;
         product.Price = dto.Price;
         product.Description = dto.Description ?? "";
         product.Category = dto.Category ?? "Menu";
-        product.Image = dto.Image ?? "";
-        product.Ingredients = dto.Ingredients ?? "[]";
+        product.ImageId = imageEntity.Id;
         product.Dietary = dto.Dietary ?? "[]";
 
         // Clear missing, add new, update existing
@@ -153,8 +170,8 @@ public class ProductsController : ControllerBase
             Price = product.Price,
             Description = product.Description,
             Category = product.Category,
-            Image = product.Image,
-            Ingredients = product.Ingredients,
+            Image = product.MainImage?.Url ?? "",
+            Ingredients = "[]", // Deprecated
             Dietary = product.Dietary,
             ProductIngredients = product.ProductIngredients.Select(pi => new ProductIngredientDto
             {
