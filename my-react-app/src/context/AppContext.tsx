@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 interface CartItem {
@@ -124,7 +124,56 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [unavailableIngredients, setUnavailableIngredients] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Auto-update availability based on real stock + manual overrides
+  useEffect(() => {
+    const updateAutoAvailability = async () => {
+      try {
+        const [ingRes, prodRes] = await Promise.all([
+          fetch('http://localhost:5224/api/Ingredients'),
+          fetch('http://localhost:5224/api/Products')
+        ]);
+        
+        if (!ingRes.ok || !prodRes.ok) return;
+ 
+        const ingredients: any[] = await ingRes.json();
+        const products: any[] = await prodRes.json();
+ 
+        // An ingredient is "unavailable" if its stock is <= 0 OR it's in the manual override list
+        const effectivelyUnavailableIngredients = new Set([
+          ...ingredients.filter(i => i.quantity <= 0).map(i => i.name.toLowerCase()),
+          ...unavailableIngredients.map(name => name.toLowerCase())
+        ]);
+ 
+        const autoUnavailableProducts = products
+          .filter(p => (p.productIngredients || []).some((pi: any) => 
+            effectivelyUnavailableIngredients.has(pi.ingredientName.toLowerCase())
+          ))
+          .map(p => p.name);
+ 
+        setUnavailableItems(autoUnavailableProducts);
+        
+        // Update local inventory mock to match real data
+        setInventory(ingredients.map(i => ({
+          id: i.id.toString(),
+          name: i.name,
+          quantity: i.quantity,
+          unit: i.unit,
+          minStock: i.minStock
+        })));
+ 
+      } catch (err) {
+        console.error("Failed to sync auto-availability:", err);
+      }
+    };
+ 
+    updateAutoAvailability();
+    const interval = setInterval(updateAutoAvailability, 30000);
+    return () => clearInterval(interval);
+  }, [unavailableIngredients]); // Re-run when manual overrides change
+
+
   const login = (email: string, password: string, role: 'client' | 'staff') => {
+
     // Mock login - in production, this would call an API
     if (role === 'client') {
       setUser({ id: '1', name: 'John Doe', email, role: 'client' });

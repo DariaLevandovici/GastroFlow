@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -20,7 +21,10 @@ public class ProductService : IProductService
 
     private IQueryable<Product> GetProductsQuery()
     {
-        return _session.Context.Products.Include(p => p.Category);
+        return _session.Context.Products
+            .Include(p => p.MainImage)
+            .Include(p => p.ProductIngredients)
+                .ThenInclude(pi => pi.Ingredient);
     }
 
     private ProductDto MapToDto(Product p) => new ProductDto
@@ -29,9 +33,16 @@ public class ProductService : IProductService
         Name = p.Name,
         Description = p.Description,
         Price = p.Price,
-        ImageUrl = p.ImageUrl,
-        CategoryId = p.CategoryId,
-        CategoryName = p.Category?.Name ?? string.Empty
+        Category = p.Category,
+        Image = p.MainImage?.Url ?? "",
+        Dietary = p.Dietary,
+        ProductIngredients = p.ProductIngredients.Select(pi => new ProductIngredientDto
+        {
+            IngredientId = pi.IngredientId,
+            IngredientName = pi.Ingredient?.Name ?? "",
+            AmountNeeded = pi.AmountNeeded,
+            Unit = pi.Ingredient?.Unit ?? ""
+        }).ToList()
     };
 
     public async Task<IEnumerable<ProductDto>> GetAllProductsAsync()
@@ -40,10 +51,10 @@ public class ProductService : IProductService
         return products.Select(MapToDto);
     }
 
-    public async Task<IEnumerable<ProductDto>> GetProductsByCategoryAsync(int categoryId)
+    public async Task<IEnumerable<ProductDto>> GetProductsByCategoryAsync(string category)
     {
         var products = await GetProductsQuery()
-            .Where(p => p.CategoryId == categoryId)
+            .Where(p => p.Category == category)
             .ToListAsync();
         return products.Select(MapToDto);
     }
@@ -54,46 +65,62 @@ public class ProductService : IProductService
         return p == null ? null : MapToDto(p);
     }
 
-    public async Task<ProductDto> CreateProductAsync(CreateProductDto dto)
+    public async Task<ProductDto> CreateProductAsync(ProductCreateUpdateDto dto)
     {
         var product = new Product
         {
-                 Name = dto.Name,
+            Name = dto.Name,
             Description = dto.Description,
             Price = dto.Price,
-            ImageUrl = dto.ImageUrl,
-            CategoryId = dto.CategoryId
+            Category = dto.Category,
+            Dietary = dto.Dietary,
+            ProductIngredients = dto.ProductIngredients.Select(pi => new ProductIngredient
+            {
+                IngredientId = pi.IngredientId,
+                AmountNeeded = pi.AmountNeeded
+            }).ToList()
         };
-        await _session.Products.AddAsync(product);
+
+        await _session.Context.Products.AddAsync(product);
         await _session.SaveChangesAsync();
 
-        // Load category to return full Dto
         var created = await GetProductsQuery().FirstOrDefaultAsync(x => x.Id == product.Id);
         return MapToDto(created!);
     }
 
-    public async Task UpdateProductAsync(int id, UpdateProductDto dto)
+    public async Task UpdateProductAsync(int id, ProductCreateUpdateDto dto)
     {
-        var p = await _session.Products.GetByIdAsync(id);
+        var p = await GetProductsQuery().FirstOrDefaultAsync(x => x.Id == id);
         if (p != null)
         {
             p.Name = dto.Name;
             p.Description = dto.Description;
             p.Price = dto.Price;
-            p.ImageUrl = dto.ImageUrl;
-            p.CategoryId = dto.CategoryId;
+            p.Category = dto.Category;
+            p.Dietary = dto.Dietary;
+
+            // Simple replace strategy for ingredients
+            p.ProductIngredients.Clear();
+            foreach (var pi in dto.ProductIngredients)
+            {
+                p.ProductIngredients.Add(new ProductIngredient
+                {
+                    IngredientId = pi.IngredientId,
+                    AmountNeeded = pi.AmountNeeded
+                });
+            }
             
-            _session.Products.Update(p);
+            _session.Context.Products.Update(p);
             await _session.SaveChangesAsync();
         }
     }
 
     public async Task DeleteProductAsync(int id)
     {
-        var p = await _session.Products.GetByIdAsync(id);
+        var p = await _session.Context.Products.FindAsync(id);
         if (p != null)
         {
-            _session.Products.Remove(p);
+            _session.Context.Products.Remove(p);
             await _session.SaveChangesAsync();
         }
     }

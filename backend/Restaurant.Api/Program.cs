@@ -66,6 +66,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseMiddleware<ErrorHandlingMiddleware>();
 app.UseHttpsRedirection();
+app.UseStaticFiles(); // Serve images from wwwroot
 app.UseCors(LocalFrontendCorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
@@ -78,6 +79,8 @@ using (var scope = app.Services.CreateScope())
 	var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 	// Apply migrations on startup.
 	await db.Database.MigrateAsync();
+	// Seed products with correct image references.
+	await DatabaseSeeder.SeedAsync(db);
 }
 
 app.Run();
