@@ -28,24 +28,24 @@ export function Footer() {
             <h3 className="text-white font-bold mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#reservation" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <Link to="/reservation" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Reservation
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#order" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <Link to="/order" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Order Online
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#menu" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <Link to="/menu" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Menu
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#career" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <Link to="/career" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Career
-                </a>
+                </Link>
               </li>
               <li>
                 <Link to="/feedback" className="text-gray-500 hover:text-white text-sm transition-colors">
@@ -60,24 +60,19 @@ export function Footer() {
             <h3 className="text-white font-bold mb-4">Terms</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#privacy" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <Link to="/privacy" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Privacy Policy
-                </a>
-              </li>
-              <li>
-                <a href="#terms" className="text-gray-500 hover:text-white text-sm transition-colors">
-                  Terms of Service
-                </a>
-              </li>
-              <li>
-                <Link to="/feedback" className="text-gray-500 hover:text-white text-sm transition-colors">
-                  Feedback
                 </Link>
               </li>
               <li>
-                <a href="#cookies" className="text-gray-500 hover:text-white text-sm transition-colors">
+                <Link to="/terms" className="text-gray-500 hover:text-white text-sm transition-colors">
+                  Terms of Service
+                </Link>
+              </li>
+              <li>
+                <Link to="/cookies" className="text-gray-500 hover:text-white text-sm transition-colors">
                   Cookie Policy
-                </a>
+                </Link>
               </li>
             </ul>
           </div>

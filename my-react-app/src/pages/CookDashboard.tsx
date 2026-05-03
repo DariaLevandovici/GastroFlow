@@ -285,13 +285,13 @@ export function CookDashboard() {
                   key={item.id}
                   onClick={() => setItemAvailability(item.name, isManuallyUnavailable)}
                   variant="outline"
-                  className={`h-auto p-4 border-2 transition-all text-left ${
+                 className={`h-auto p-3 border-2 transition-all text-left overflow-hidden ${
                     isUnavailable
                       ? 'bg-red-900/30 border-red-600'
                       : 'bg-green-900/30 border-green-600'
                   }`}
                 >
-                  <p className="text-white font-bold text-sm mb-1">{item.name}</p>
+                  <p className="text-white font-bold text-sm mb-1 break-words whitespace-normal leading-tight">{item.name}</p>
                   <p className={`text-xs ${isUnavailable ? 'text-red-400' : 'text-green-400'}`}>
                     {isBlockedByIngredient ? 'Ingredient unavailable' : isUnavailable ? 'Unavailable' : 'Available'}
                   </p>

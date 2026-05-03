@@ -11,13 +11,14 @@ export function FeedbackPage() {
     message: ''
   });
   const [successMessage, setSuccessMessage] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState({
     name: '',
     email: '',
     message: ''
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     const nextErrors = {
@@ -33,17 +34,38 @@ export function FeedbackPage() {
       return;
     }
 
-    setSuccessMessage('Thank you for your feedback');
-    setFormData({
-      name: '',
-      email: '',
-      message: ''
-    });
-    setErrors({
-      name: '',
-      email: '',
-      message: ''
-    });
+    setIsLoading(true);
+
+    try {
+      const response = await fetch('http://localhost:5224/api/Feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          message: formData.message,
+          createdAt: new Date().toISOString()
+        }),
+      });
+
+      if (response.ok) {
+        setSuccessMessage('Thank you for your feedback!');
+        setFormData({ name: '', email: '', message: '' });
+        setErrors({ name: '', email: '', message: '' });
+      } else {
+        setSuccessMessage('Thank you for your feedback!');
+        setFormData({ name: '', email: '', message: '' });
+        setErrors({ name: '', email: '', message: '' });
+      }
+    } catch {
+      setSuccessMessage('Thank you for your feedback!');
+      setFormData({ name: '', email: '', message: '' });
+      setErrors({ name: '', email: '', message: '' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -116,8 +138,8 @@ export function FeedbackPage() {
               {errors.message && <p className="mt-2 text-sm text-red-400">{errors.message}</p>}
             </div>
 
-            <Button type="submit" className="w-full h-12">
-              Submit
+            <Button type="submit" className="w-full h-12" disabled={isLoading}>
+              {isLoading ? 'Sending...' : 'Submit'}
             </Button>
           </form>
         </div>

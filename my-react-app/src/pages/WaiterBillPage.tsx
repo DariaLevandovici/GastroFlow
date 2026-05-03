@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeft, Printer, Download } from 'lucide-react';
+import { ArrowLeft, Printer, Download, Users } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../context/AppContext';
 import { Button } from '../ui/button';
@@ -8,6 +8,7 @@ export function WaiterBillPage() {
   const navigate = useNavigate();
   const { orders, tables, updateTableStatus, finalizeOrder } = useApp();
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
+const [showSplit, setShowSplit] = useState(false);
   const [splitCountInput, setSplitCountInput] = useState('2');
 
   // Filter orders for dine-in that are ready or delivered
@@ -199,24 +200,45 @@ export function WaiterBillPage() {
                     </div>
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex gap-4">
-                    <Button
-                      onClick={handlePrintBill}
-                      variant="secondary"
-                      className="flex-1"
-                    >
-                      <Printer className="w-4 h-4" />
-                      Print Bill
-                    </Button>
-                    <Button
-                      onClick={handleGenerateBill}
-                      className="flex-1"
-                    >
-                      <Download className="w-4 h-4" />
-                      Finalize & Close
-                    </Button>
-                  </div>
+                 {/* Split Bill Section */}
+{showSplit && (
+  <div className="mb-6 p-4 bg-gray-800 rounded-xl border border-gray-700">
+    <h4 className="text-white font-bold mb-3">Split Bill</h4>
+    <div className="flex items-center gap-4 mb-3">
+      <p className="text-gray-400 text-sm">Number of people:</p>
+      <div className="flex items-center gap-2">
+<button onClick={() => setSplitCountInput(String(Math.max(2, Number(splitCountInput) - 1)))} className="w-8 h-8 bg-gray-700 text-white rounded-full hover:bg-gray-600">-</button>
+<span className="text-white font-bold w-6 text-center">{splitCountInput}</span>
+<button onClick={() => setSplitCountInput(String(Number(splitCountInput) + 1))} className="w-8 h-8 bg-gray-700 text-white rounded-full hover:bg-gray-600">+</button>
+      </div>
+    </div>
+    <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-3">
+      <p className="text-gray-400 text-sm">Each person pays:</p>
+      <p className="text-blue-400 font-bold text-xl">{(566.50 / Number(splitCountInput)).toFixed(2)} MDL</p>
+    </div>
+  </div>
+)}
+{/* Actions */}
+<div className="flex flex-col gap-3">
+  <Button
+    onClick={() => setShowSplit(!showSplit)}
+    variant="outline"
+    className="w-full border-blue-600 text-blue-400 hover:bg-blue-900/30"
+  >
+    <Users className="w-4 h-4" />
+    {showSplit ? "Hide Split Bill" : "Split Bill"}
+  </Button>
+  <div className="flex gap-4">
+    <Button onClick={handlePrintBill} variant="secondary" className="flex-1">
+      <Printer className="w-4 h-4" />
+      Print Bill
+    </Button>
+    <Button onClick={handleGenerateBill} className="flex-1">
+      <Download className="w-4 h-4" />
+      Finalize & Close
+    </Button>
+  </div>
+</div>
 
                   <p className="text-center text-gray-500 text-xs mt-6">
                     Thank you for dining with us!

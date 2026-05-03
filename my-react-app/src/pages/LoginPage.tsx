@@ -108,21 +108,7 @@ export function LoginPage() {
             </Button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-800 rounded-lg">
-            <p className="text-xs text-gray-400 mb-2">Demo Credentials:</p>
-            <div className="text-xs text-gray-500 space-y-1">
-              {loginType === 'client' ? (
-                <p>Client: client@demo.com / password</p>
-              ) : (
-                <>
-                  <p>Waiter: waiter@gastroflow.md / pass</p>
-                  <p>Cook: cook@gastroflow.md / pass</p>
-                  <p>Manager: manager@gastroflow.md / pass</p>
-                </>
-              )}
-            </div>
-          </div>
+        
         </div>
 
         <div className="text-center mt-6">

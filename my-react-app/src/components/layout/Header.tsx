@@ -14,7 +14,7 @@ export function Header() {
     ? {
         reservation: 'Rezervare',
         order: 'Comandă',
-        menu: 'Meniu',
+        menu: 'Menu',
         career: 'Cariere',
         login: 'Autentificare',
         logout: 'Deconectare',
@@ -22,7 +22,7 @@ export function Header() {
     : {
         reservation: 'Reservation',
         order: 'Order',
-        menu: 'Meniu',
+        menu: 'Menu',
         career: 'Career',
         login: 'Login',
         logout: 'Logout',
@@ -76,11 +76,7 @@ export function Header() {
             <Button variant="ghost" className="text-gray-300 hover:text-white px-2" onClick={() => navigate('/career')}>
               {labels.career}
             </Button>
-            {user && user.role === 'client' && pathname !== '/' && (
-              <Button variant="ghost" className="text-blue-400 hover:text-blue-300 px-2" onClick={() => navigate('/dashboard/client')}>
-                Dashboard
-              </Button>
-            )}
+  
           </nav>
 
           {/* Right Side - Search & Login */}

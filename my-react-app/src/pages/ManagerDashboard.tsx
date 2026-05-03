@@ -9,7 +9,6 @@ import { IngredientsManager } from '../components/IngredientsManager';
 export function ManagerDashboard() {
   const { user, logout, orders, reservations, inventory, updateReservationStatus } = useApp();
   const navigate = useNavigate();
-  // Resolution: keep the 'products' tab introduced by the backend branch (main)
   const [selectedTab, setSelectedTab] = useState<'overview' | 'inventory' | 'reservations' | 'reports' | 'products'>('overview');
 
   const handleLogout = () => {
@@ -17,7 +16,6 @@ export function ManagerDashboard() {
     navigate('/');
   };
 
-  // Statistics
   const totalRevenue = orders.reduce((sum, order) => sum + order.total, 0);
   const todayOrders = orders.filter(o => {
     const orderDate = new Date(o.createdAt).toDateString();
@@ -36,11 +34,7 @@ export function ManagerDashboard() {
             <h1 className="text-4xl font-bold text-white mb-2">Manager Dashboard</h1>
             <p className="text-gray-400">Welcome, {user?.name}</p>
           </div>
-          <Button
-            onClick={handleLogout}
-            variant="secondary"
-            className="px-6"
-          >
+          <Button onClick={handleLogout} variant="secondary" className="px-6">
             <LogOut className="w-4 h-4" />
             Logout
           </Button>
@@ -92,7 +86,7 @@ export function ManagerDashboard() {
             { id: 'inventory', label: 'Inventory', icon: Package },
             { id: 'reservations', label: 'Reservations', icon: Calendar },
             { id: 'reports', label: 'Reports', icon: Users },
-            { id: 'products', label: 'Products (DB)', icon: Database }
+            { id: 'products', label: 'Products', icon: Database }
           ].map(tab => (
             <Button
               key={tab.id}
@@ -116,12 +110,28 @@ export function ManagerDashboard() {
             <div className="bg-[#242424] rounded-2xl p-6 border border-gray-800">
               <h2 className="text-2xl font-bold text-white mb-2">Create Staff Account</h2>
               <p className="text-gray-400 mb-6">Open the dedicated page to create and manage staff accounts.</p>
-              <Button
-                onClick={() => navigate('/dashboard/manager/staff-accounts')}
-                className="w-full md:w-auto px-6"
-              >
-                Create Staff Account
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={() => navigate('/dashboard/manager/staff-accounts')}
+                  className="px-6"
+                >
+                  Create Staff Account
+                </Button>
+                <Button
+                  onClick={() => navigate('/')}
+                  variant="secondary"
+                  className="px-6"
+                >
+                  Go Back
+                </Button>
+                <Button
+                  variant="destructive"
+                  className="px-6 bg-red-900/30 hover:bg-red-900/50 text-red-400"
+                  onClick={() => setSelectedTab('overview')}
+                >
+                  Cancel
+                </Button>
+              </div>
             </div>
 
             {/* Recent Orders */}
@@ -164,14 +174,9 @@ export function ManagerDashboard() {
           </div>
         )}
 
-        {/* Resolution: inventory tab now uses IngredientsManager (real DB) instead of the mock inline form */}
         {selectedTab === 'inventory' && (
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">Inventory Management</h2>
-            <p className="text-gray-400 text-sm mb-8">
-              Manage ingredients stored in the PostgreSQL database via the ASP.NET Core API
-              (<span className="text-blue-400 font-mono">http://localhost:5224/api/Ingredients</span>).
-            </p>
             <IngredientsManager />
           </div>
         )}
@@ -294,10 +299,6 @@ export function ManagerDashboard() {
         {selectedTab === 'products' && (
           <div>
             <h2 className="text-2xl font-bold text-white mb-6">Products Management</h2>
-            <p className="text-gray-400 text-sm mb-8">
-              Manage products stored in the PostgreSQL database via the ASP.NET Core API
-              (<span className="text-blue-400 font-mono">http://localhost:5224/api/Products</span>).
-            </p>
             <ProductsManager />
           </div>
         )}
