@@ -423,3 +423,14 @@ C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\obj\Debug\net
 C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\obj\Debug\net10.0\Restaura.DC4DCE66.Up2Date
 C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\obj\Debug\net10.0\Restaurant.Api.genruntimeconfig.cache
 C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\obj\Debug\net10.0\ref\Restaurant.Api.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\Supabase.Functions.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\Supabase.Gotrue.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\MimeMapping.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\Supabase.Postgrest.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\Supabase.Realtime.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\Supabase.Core.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\Supabase.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\Supabase.Storage.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\System.Reactive.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\Websocket.Client.dll
+C:\Users\PC\Desktop\c\.vscode\Proiect-de-an\backend\Restaurant.Api\bin\Debug\net10.0\Restaurant.Api.staticwebassets.runtime.json
