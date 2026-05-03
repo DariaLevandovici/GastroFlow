@@ -1,31 +1,26 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
-
-node_modules
-dist
-dist-ssr
-*.local
-
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
-
-# .NET Build output
+# .NET
 bin/
 obj/
-[Bb]in/
-[Oo]bj/
+*.user
+*.userosscache
+*.sln.docuser
 
+# Node.js
+node_modules/
+dist/
+.env
+
+# VS Code
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# Databases
+*.db
+*.sqlite
+
+# OS
+.DS_Store
+Thumbs.db
