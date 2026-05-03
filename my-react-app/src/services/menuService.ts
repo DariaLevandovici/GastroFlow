@@ -2,9 +2,15 @@ import { API_ENDPOINTS } from '../config/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+interface BackendProductIngredient {
+  ingredientId: number;
+  ingredientName: string;
+  amountNeeded: number;
+  unit: string;
+}
+
 /**
  * Raw shape returned by GET /api/Products.
- * Ingredients and Dietary are JSON array strings (e.g. '["eggs","bacon"]').
  */
 interface BackendProduct {
   id: number;
@@ -13,8 +19,14 @@ interface BackendProduct {
   description: string;
   category: string;
   image: string;
-  ingredients: string; // JSON array string from backend
-  dietary: string;     // JSON array string from backend
+  dietary: string; // JSON array string from backend e.g. '["vegan"]'
+  productIngredients: BackendProductIngredient[]; // real relation
+}
+
+export interface IngredientDetail {
+  name: string;
+  amount: number;
+  unit: string;
 }
 
 /**
@@ -29,6 +41,7 @@ export interface MenuItem {
   category: string;
   image: string;
   ingredients: string[];
+  detailedIngredients: IngredientDetail[];
   dietary: string[];
 }
 
@@ -54,10 +67,17 @@ function mapToMenuItem(p: BackendProduct): MenuItem {
     price: p.price,
     category: p.category || 'Menu',
     image: p.image || '',
-    ingredients: safeParseArray(p.ingredients),
+    // Read ingredient names from the real Many-to-Many relation
+    ingredients: (p.productIngredients ?? []).map(pi => pi.ingredientName),
+    detailedIngredients: (p.productIngredients ?? []).map(pi => ({
+      name: pi.ingredientName,
+      amount: pi.amountNeeded,
+      unit: pi.unit
+    })),
     dietary: safeParseArray(p.dietary),
   };
 }
+
 
 // ─── API calls ────────────────────────────────────────────────────────────────
 

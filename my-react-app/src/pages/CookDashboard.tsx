@@ -1,11 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { LogOut, ChefHat, Eye, AlertTriangle, BookOpen } from 'lucide-react';
+import { LogOut, ChefHat, AlertTriangle, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { getMenuItems, type MenuItem } from '../services/menuService';
+import { API_ENDPOINTS } from '../config/api';
+
+interface IngredientItem {
+  id: number;
+  name: string;
+  quantity: number;
+  unit: string;
+  minStock: number;
+  category: string;
+}
 
 export function CookDashboard() {
   const {
@@ -27,6 +37,10 @@ export function CookDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [menuSearchTerm, setMenuSearchTerm] = useState('');
   const [menuFilter, setMenuFilter] = useState('All');
+  const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
+  const [ingSearchTerm, setIngSearchTerm] = useState('');
+  const [ingFilter, setIngFilter] = useState('All'); // All | Low | Ok
+
 
   const handleLogout = () => {
     logout();
@@ -41,8 +55,8 @@ export function CookDashboard() {
   const handleCompleteOrder = (orderId: string) => {
     updateOrderStatus(orderId, 'ready');
     setSelectedOrder(null);
-    
-    // Simulate inventory reduction
+
+    // Simulate inventory reduction (mock logic)
     const randomItem = inventory[Math.floor(Math.random() * inventory.length)];
     if (randomItem) {
       updateInventory(randomItem.id, Math.max(0, randomItem.quantity - 2));
@@ -52,10 +66,6 @@ export function CookDashboard() {
   const incomingOrders = orders.filter(o => o.status === 'confirmed');
   const preparingOrders = orders.filter(o => o.status === 'in-preparation');
   const lowStockItems = inventory.filter(item => item.quantity <= item.minStock);
-  const itemHasUnavailableIngredient = (item: typeof menuItems[number]) =>
-    item.ingredients.some((ingredient) =>
-      unavailableIngredients.includes(ingredient.toLowerCase())
-    );
 
   useEffect(() => {
     let isMounted = true;
@@ -83,26 +93,28 @@ export function CookDashboard() {
     };
   }, []);
 
-  // Filter menu items for availability
+  useEffect(() => {
+    const fetchIngredients = () => {
+      fetch(API_ENDPOINTS.ingredients)
+        .then(r => r.json())
+        .then((data: IngredientItem[]) => setIngredients(data))
+        .catch(() => {/* silent fail */ });
+    };
+
+    fetchIngredients();
+    const interval = setInterval(fetchIngredients, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Filter menu items for the availability grid
   const filteredMenuItems = menuItems.filter(item => {
+    const isUnavailable = unavailableItems.includes(item.name);
     const matchesSearch = item.name.toLowerCase().includes(menuSearchTerm.toLowerCase());
-    const isEffectivelyUnavailable =
-      unavailableItems.includes(item.name) || itemHasUnavailableIngredient(item);
-    const matchesFilter = menuFilter === 'All' || 
-                         (menuFilter === 'Available' && !isEffectivelyUnavailable) ||
-                         (menuFilter === 'Unavailable' && isEffectivelyUnavailable);
+    const matchesFilter = menuFilter === 'All' ||
+      (menuFilter === 'Available' && !isUnavailable) ||
+      (menuFilter === 'Unavailable' && isUnavailable);
     return matchesSearch && matchesFilter;
   });
-
-  // Resolution: keep helpers from HEAD — they are consumed by the Ingredients Availability section below.
-  const ingredientItems = Array.from(
-    new Set(menuItems.flatMap((item) => item.ingredients.map((ingredient) => ingredient.toLowerCase())))
-  ).sort((a, b) => a.localeCompare(b));
-
-  const toggleIngredientAvailability = (ingredient: string) => {
-    setIngredientAvailability(ingredient, unavailableIngredients.includes(ingredient));
-  };
-
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
@@ -176,7 +188,6 @@ export function CookDashboard() {
                       </span>
                     </div>
 
-                    {/* Order Items */}
                     <div className="mb-4 p-3 bg-gray-800 rounded-lg">
                       <p className="text-gray-400 text-sm">Items: {order.items.length} dishes</p>
                       {order.tableNumber && (
@@ -224,7 +235,6 @@ export function CookDashboard() {
                       </span>
                     </div>
 
-                    {/* Waiter Comments */}
                     <div className="mb-4 p-3 bg-gray-800 rounded-lg">
                       <p className="text-gray-400 text-xs mb-1">Waiter Notes:</p>
                       <p className="text-white text-sm">{order.comment || 'No special instructions'}</p>
@@ -247,8 +257,7 @@ export function CookDashboard() {
         {/* Menu Item Availability */}
         <div className="mt-8">
           <h2 className="text-2xl font-bold text-white mb-6">Menu Availability</h2>
-          
-          {/* Search and Filter */}
+
           <div className="mb-6 flex gap-4">
             <Input
               type="text"
@@ -276,58 +285,92 @@ export function CookDashboard() {
             {menuError && !isLoadingMenu && (
               <p className="col-span-full text-center text-red-400 py-8">{menuError}</p>
             )}
-            {!isLoadingMenu && !menuError && filteredMenuItems.map(item => {
-              const isManuallyUnavailable = unavailableItems.includes(item.name);
-              const isBlockedByIngredient = itemHasUnavailableIngredient(item);
-              const isUnavailable = isManuallyUnavailable || isBlockedByIngredient;
-              return (
-                <Button
-                  key={item.id}
-                  onClick={() => setItemAvailability(item.name, isManuallyUnavailable)}
-                  variant="outline"
-                  className={`h-auto p-4 border-2 transition-all text-left ${
-                    isUnavailable
-                      ? 'bg-red-900/30 border-red-600'
-                      : 'bg-green-900/30 border-green-600'
-                  }`}
-                >
-                  <p className="text-white font-bold text-sm mb-1">{item.name}</p>
-                  <p className={`text-xs ${isUnavailable ? 'text-red-400' : 'text-green-400'}`}>
-                    {isBlockedByIngredient ? 'Ingredient unavailable' : isUnavailable ? 'Unavailable' : 'Available'}
-                  </p>
-                </Button>
-              );
-            })}
+            {!isLoadingMenu && !menuError && (
+              filteredMenuItems.map(item => {
+                const isUnavailable = unavailableItems.includes(item.name);
+                return (
+                  <div
+                    key={item.id}
+                    className={`h-auto p-4 rounded-xl border-2 transition-all text-left ${
+                      isUnavailable
+                        ? 'bg-red-900/30 border-red-600'
+                        : 'bg-green-900/30 border-green-600'
+                    }`}
+                  >
+                    <p className="text-white font-bold text-sm mb-1">{item.name}</p>
+                    <p className={`text-xs ${isUnavailable ? 'text-red-400' : 'text-green-400'}`}>
+                      {isUnavailable ? 'Unavailable' : 'Available'}
+                    </p>
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
 
+        {/* Ingredients Availability */}
         <div className="mt-8">
           <h2 className="text-2xl font-bold text-white mb-6">Ingredients Availability</h2>
-          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 lg:grid-cols-6">
-            {ingredientItems.map((ingredient) => {
-              const isUnavailable = unavailableIngredients.includes(ingredient);
-              return (
-                <Button
-                  key={ingredient}
-                  onClick={() => toggleIngredientAvailability(ingredient)}
-                  variant="outline"
-                  className={`h-auto p-4 border-2 transition-all text-left ${
-                    isUnavailable
-                      ? 'bg-red-900/30 border-red-600'
-                      : 'bg-green-900/30 border-green-600'
-                  }`}
-                >
-                  <p className="text-white font-bold text-sm mb-1 capitalize">{ingredient}</p>
-                  <p className={`text-xs ${isUnavailable ? 'text-red-400' : 'text-green-400'}`}>
-                    {isUnavailable ? 'Unavailable' : 'Available'}
-                  </p>
-                </Button>
-              );
-            })}
+
+          <div className="mb-6 flex gap-4">
+            <Input
+              type="text"
+              placeholder="Search ingredients..."
+              value={ingSearchTerm}
+              onChange={(e) => setIngSearchTerm(e.target.value)}
+              className="flex-1 h-12 px-6"
+            />
+            <Select value={ingFilter} onValueChange={setIngFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All</SelectItem>
+                <SelectItem value="Low">Low Stock</SelectItem>
+                <SelectItem value="Ok">In Stock</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {ingredients
+              .filter(ing => {
+                const matchesSearch = ing.name.toLowerCase().includes(ingSearchTerm.toLowerCase());
+                const isLow = ing.quantity <= ing.minStock;
+                const matchesFilter = ingFilter === 'All' || (ingFilter === 'Low' && isLow) || (ingFilter === 'Ok' && !isLow);
+                return matchesSearch && matchesFilter;
+              })
+              .map(ing => {
+                const isOutOfStock = ing.quantity <= 0;
+                const isManuallyUnavailable = unavailableIngredients.includes(ing.name.toLowerCase());
+                const effectivelyUnavailable = isOutOfStock || isManuallyUnavailable;
+
+                return (
+                  <Button
+                    key={ing.id}
+                    onClick={() => setIngredientAvailability(ing.name, effectivelyUnavailable)}
+                    variant="outline"
+                    className={`h-auto p-4 rounded-xl border-2 transition-all text-left flex-col items-start hover:scale-[1.02] ${
+                      effectivelyUnavailable
+                        ? 'bg-red-900/30 border-red-600 hover:bg-red-900/40'
+                        : 'bg-green-900/30 border-green-600 hover:bg-green-900/40'
+                    }`}
+                  >
+                    <p className="text-white font-bold text-sm mb-1 truncate w-full capitalize">{ing.name}</p>
+                    <p className={`text-xs ${effectivelyUnavailable ? 'text-red-400' : 'text-green-400'}`}>
+                      {isOutOfStock ? 'Out of Stock' : isManuallyUnavailable ? 'Manually Disabled' : `${ing.quantity} ${ing.unit}`}
+                    </p>
+                  </Button>
+                );
+              })
+            }
+
+            {ingredients.length === 0 && (
+              <p className="col-span-full text-center text-gray-400 py-8">Loading ingredients...</p>
+            )}
           </div>
         </div>
       </div>
     </div>
   );
 }
-
