@@ -307,18 +307,27 @@ export function CookRecipesPage() {
 
                 {/* Ingredients */}
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-4">Ingredients</h3>
+                  <h3 className="text-2xl font-bold text-white mb-4">Ingredients & Quantities</h3>
                   <div className="bg-gray-800 rounded-xl p-6">
-                    <div className="grid grid-cols-2 gap-3">
-                      {selectedRecipe.ingredients.map((ingredient, idx) => (
-                        <div key={idx} className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
-                          <span className="text-gray-300">{ingredient}</span>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {(selectedRecipe.detailedIngredients || []).map((ing, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
+                          <div className="flex items-center gap-3">
+                            <div className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
+                            <span className="text-gray-200 font-medium capitalize">{ing.name}</span>
+                          </div>
+                          <span className="text-blue-400 font-bold bg-blue-900/20 px-3 py-1 rounded-md border border-blue-800/30">
+                            {ing.amount} {ing.unit}
+                          </span>
                         </div>
                       ))}
+                      {(selectedRecipe.detailedIngredients || []).length === 0 && (
+                        <p className="text-gray-500 italic">No ingredients specified for this recipe.</p>
+                      )}
                     </div>
                   </div>
                 </div>
+
 
                 {/* Instructions */}
                 <div>

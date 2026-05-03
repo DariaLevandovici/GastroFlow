@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 interface CartItem {
@@ -119,7 +119,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [unavailableItems, setUnavailableItems] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
 
+  // Auto-update availability based on real stock
+  useEffect(() => {
+    const updateAutoAvailability = async () => {
+      try {
+        const [ingRes, prodRes] = await Promise.all([
+          fetch('http://localhost:5224/api/Ingredients'),
+          fetch('http://localhost:5224/api/Products')
+        ]);
+        
+        if (!ingRes.ok || !prodRes.ok) return;
+
+        const ingredients: any[] = await ingRes.json();
+        const products: any[] = await prodRes.json();
+
+        const outOfStockNames = new Set(
+          ingredients.filter(i => i.quantity <= 0).map(i => i.name.toLowerCase())
+        );
+
+        const autoUnavailable = products
+          .filter(p => (p.productIngredients || []).some((pi: any) => 
+            outOfStockNames.has(pi.ingredientName.toLowerCase())
+          ))
+          .map(p => p.name);
+
+        setUnavailableItems(autoUnavailable);
+        
+        // Also update local inventory mock to match real data (optional but good)
+        setInventory(ingredients.map(i => ({
+          id: i.id.toString(),
+          name: i.name,
+          quantity: i.quantity,
+          unit: i.unit,
+          minStock: i.minStock
+        })));
+
+      } catch (err) {
+        console.error("Failed to sync auto-availability:", err);
+      }
+    };
+
+    updateAutoAvailability();
+    const interval = setInterval(updateAutoAvailability, 30000); // Sync every 30s
+    return () => clearInterval(interval);
+  }, []);
+
   const login = (email: string, password: string, role: 'client' | 'staff') => {
+
     // Mock login - in production, this would call an API
     if (role === 'client') {
       setUser({ id: '1', name: 'John Doe', email, role: 'client' });

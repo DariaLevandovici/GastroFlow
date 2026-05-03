@@ -1,11 +1,21 @@
 import { useEffect, useState } from 'react';
 import { useApp } from '../context/AppContext';
-import { LogOut, ChefHat, Eye, AlertTriangle, BookOpen } from 'lucide-react';
+import { LogOut, ChefHat, AlertTriangle, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { getMenuItems, type MenuItem } from '../services/menuService';
+import { API_ENDPOINTS } from '../config/api';
+
+interface IngredientItem {
+  id: number;
+  name: string;
+  quantity: number;
+  unit: string;
+  minStock: number;
+  category: string;
+}
 
 export function CookDashboard() {
   const { user, logout, orders, updateOrderStatus, unavailableItems, setItemAvailability, inventory, updateInventory } = useApp();
@@ -16,6 +26,10 @@ export function CookDashboard() {
   const [selectedOrder, setSelectedOrder] = useState<string | null>(null);
   const [menuSearchTerm, setMenuSearchTerm] = useState('');
   const [menuFilter, setMenuFilter] = useState('All');
+  const [ingredients, setIngredients] = useState<IngredientItem[]>([]);
+  const [ingSearchTerm, setIngSearchTerm] = useState('');
+  const [ingFilter, setIngFilter] = useState('All'); // All | Low | Ok
+
 
   const handleLogout = () => {
     logout();
@@ -68,14 +82,36 @@ export function CookDashboard() {
     };
   }, []);
 
-  // Filter menu items for availability
+  useEffect(() => {
+    fetch(API_ENDPOINTS.ingredients)
+      .then(r => r.json())
+      .then((data: IngredientItem[]) => setIngredients(data))
+      .catch(() => {/* silent fail */});
+  }, []);
+
+  // Build a set of ingredient names that are completely out of stock (<= 0).
+  const outOfStockIngNames = new Set(
+    ingredients.filter(i => i.quantity <= 0).map(i => i.name.toLowerCase())
+  );
+
+  // A menu item is auto-unavailable if ANY of its ingredients is out of stock.
+  const autoUnavailableProducts = new Set(
+    menuItems
+      .filter(item => item.ingredients.some(ing => outOfStockIngNames.has(ing.toLowerCase())))
+      .map(item => item.name)
+  );
+
+  // Filter menu items for the availability grid
   const filteredMenuItems = menuItems.filter(item => {
+    const isUnavailable = autoUnavailableProducts.has(item.name);
     const matchesSearch = item.name.toLowerCase().includes(menuSearchTerm.toLowerCase());
-    const matchesFilter = menuFilter === 'All' || 
-                         (menuFilter === 'Available' && !unavailableItems.includes(item.name)) ||
-                         (menuFilter === 'Unavailable' && unavailableItems.includes(item.name));
+    const matchesFilter = menuFilter === 'All' ||
+      (menuFilter === 'Available' && !isUnavailable) ||
+      (menuFilter === 'Unavailable' && isUnavailable);
     return matchesSearch && matchesFilter;
   });
+
+
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
@@ -252,13 +288,11 @@ export function CookDashboard() {
             {!isLoadingMenu && !menuError && (
               <>
             {filteredMenuItems.map(item => {
-              const isUnavailable = unavailableItems.includes(item.name);
+              const isUnavailable = autoUnavailableProducts.has(item.name);
               return (
-                <Button
+                <div
                   key={item.id}
-                  onClick={() => setItemAvailability(item.name, isUnavailable)}
-                  variant="outline"
-                  className={`h-auto p-4 border-2 transition-all text-left ${
+                  className={`h-auto p-4 rounded-xl border-2 transition-all text-left ${
                     isUnavailable
                       ? 'bg-red-900/30 border-red-600'
                       : 'bg-green-900/30 border-green-600'
@@ -268,14 +302,71 @@ export function CookDashboard() {
                   <p className={`text-xs ${isUnavailable ? 'text-red-400' : 'text-green-400'}`}>
                     {isUnavailable ? 'Unavailable' : 'Available'}
                   </p>
-                </Button>
+                </div>
               );
             })}
               </>
             )}
           </div>
         </div>
+        {/* Ingredients Availability */}
+        <div className="mt-8">
+          <h2 className="text-2xl font-bold text-white mb-6">Ingredients Availability</h2>
+
+          {/* Search + Filter */}
+          <div className="mb-6 flex gap-4">
+            <Input
+              type="text"
+              placeholder="Search ingredients..."
+              value={ingSearchTerm}
+              onChange={(e) => setIngSearchTerm(e.target.value)}
+              className="flex-1 h-12 px-6"
+            />
+            <Select value={ingFilter} onValueChange={setIngFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="All">All</SelectItem>
+                <SelectItem value="Low">Low Stock</SelectItem>
+                <SelectItem value="Ok">In Stock</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {ingredients
+              .filter(ing => {
+                const matchesSearch = ing.name.toLowerCase().includes(ingSearchTerm.toLowerCase());
+                const isOutOfStock = ing.quantity <= 0;
+                const isLow = ing.quantity <= ing.minStock;
+                const matchesFilter = ingFilter === 'All' || (ingFilter === 'Low' && isLow) || (ingFilter === 'Ok' && !isLow);
+                return matchesSearch && matchesFilter;
+              })
+              .map(ing => {
+                const isOutOfStock = ing.quantity <= 0;
+                return (
+                  <div
+                    key={ing.id}
+                    className={`h-auto p-4 rounded-xl border-2 transition-all text-left ${
+                      isOutOfStock ? 'bg-red-900/30 border-red-600' : 'bg-green-900/30 border-green-600'
+                    }`}
+                  >
+                    <p className="text-white font-bold text-sm mb-1 truncate">{ing.name}</p>
+                    <p className={`text-xs ${isOutOfStock ? 'text-red-400' : 'text-green-400'}`}>
+                      {isOutOfStock ? 'Out of Stock' : `${ing.quantity} ${ing.unit}`}
+                    </p>
+                  </div>
+                );
+              })
+            }
+
+            {ingredients.length === 0 && (
+              <p className="col-span-full text-center text-gray-400 py-8">Loading ingredients...</p>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
-}
+}
