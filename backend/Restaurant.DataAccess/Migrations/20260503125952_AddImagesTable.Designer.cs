@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using Restaurant.DataAccess.Context;
@@ -11,9 +12,11 @@ using Restaurant.DataAccess.Context;
 namespace Restaurant.DataAccess.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260503125952_AddImagesTable")]
+    partial class AddImagesTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -105,8 +108,13 @@ namespace Restaurant.DataAccess.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<Guid>("ImageId")
-                        .HasColumnType("uuid");
+                    b.Property<string>("Image")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Ingredients")
+                        .IsRequired()
+                        .HasColumnType("text");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -117,48 +125,39 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ImageId")
-                        .IsUnique();
-
                     b.ToTable("Products");
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.ProductIngredient", b =>
                 {
-                    b.Property<int>("ProductId")
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    b.Property<int>("IngredientId")
-                        .HasColumnType("integer");
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("AmountNeeded")
                         .HasColumnType("numeric");
 
-                    b.Property<int>("Id")
+                    b.Property<int>("IngredientId")
                         .HasColumnType("integer");
 
-                    b.HasKey("ProductId", "IngredientId");
+                    b.Property<int>("ProductId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
 
                     b.HasIndex("IngredientId");
 
+                    b.HasIndex("ProductId");
+
                     b.ToTable("ProductIngredients");
-                });
-
-            modelBuilder.Entity("Restaurant.Domain.Entities.Product", b =>
-                {
-                    b.HasOne("Restaurant.Domain.Entities.Image", "MainImage")
-                        .WithOne("Product")
-                        .HasForeignKey("Restaurant.Domain.Entities.Product", "ImageId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("MainImage");
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.ProductIngredient", b =>
                 {
                     b.HasOne("Restaurant.Domain.Entities.Ingredient", "Ingredient")
-                        .WithMany("ProductIngredients")
+                        .WithMany()
                         .HasForeignKey("IngredientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -172,16 +171,6 @@ namespace Restaurant.DataAccess.Migrations
                     b.Navigation("Ingredient");
 
                     b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("Restaurant.Domain.Entities.Image", b =>
-                {
-                    b.Navigation("Product");
-                });
-
-            modelBuilder.Entity("Restaurant.Domain.Entities.Ingredient", b =>
-                {
-                    b.Navigation("ProductIngredients");
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.Product", b =>
