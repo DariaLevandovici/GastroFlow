@@ -21,6 +21,10 @@ public static class BusinessLogic
         services.AddScoped<ICategoryService, CategoryService>();
         services.AddScoped<ITableService, TableService>();
         services.AddScoped<IImageService, ImageService>();
+        services.AddScoped<IProductService, ProductService>();
+        services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IRecipeService, RecipeService>();
+        services.AddScoped<IUserService, UserService>();
 
         return services;
     }

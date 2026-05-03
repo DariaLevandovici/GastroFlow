@@ -6,6 +6,7 @@ import { ReservationPage } from './pages/ReservationPage';
 import { CareerPage } from './pages/CareerPage';
 import { OrderPage } from './pages/OrderPage';
 import { LoginPage } from './pages/LoginPage';
+import { RegisterPage } from './pages/RegisterPage';
 import { AccountPage } from './pages/AccountPage';
 import { ClientDashboard } from './pages/ClientDashboard';
 import { WaiterDashboard } from './pages/WaiterDashboard';
@@ -14,6 +15,7 @@ import { WaiterBillPage } from './pages/WaiterBillPage';
 import { CookDashboard } from './pages/CookDashboard';
 import { CookRecipesPage } from './pages/CookRecipesPage';
 import { ManagerDashboard } from './pages/ManagerDashboard';
+import { StaffAccountsPage } from './pages/StaffAccountsPage';
 import { FeedbackPage } from './pages/FeedbackPage';
 import { Layout } from './components/layout/Layout';
 
@@ -51,6 +53,10 @@ export const router = createBrowserRouter([
     element: <Layout showFooter={false}><LoginPage /></Layout>
   },
   {
+    path: '/register',
+    element: <Layout showFooter={false}><RegisterPage /></Layout>
+  },
+  {
     path: '/account',
     element: <Layout showFooter={false}><AccountPage /></Layout>
   },
@@ -81,5 +87,9 @@ export const router = createBrowserRouter([
   {
     path: '/dashboard/manager',
     element: <ManagerDashboard />
+  },
+  {
+    path: '/dashboard/manager/staff-accounts',
+    element: <StaffAccountsPage />
   }
 ]);

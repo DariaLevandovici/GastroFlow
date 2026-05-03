@@ -10,10 +10,16 @@ public class AppDbContext : DbContext
     }
 
     
+    public DbSet<User> Users => Set<User>();
+    public DbSet<Category> Categories => Set<Category>();
+    public DbSet<Product> Products => Set<Product>();
     public DbSet<Ingredient> Ingredients => Set<Ingredient>();
     public DbSet<ProductIngredient> ProductIngredients => Set<ProductIngredient>();
-
-    public DbSet<Product> Products => Set<Product>();
+    public DbSet<Recipe> Recipes => Set<Recipe>();
+    public DbSet<Order> Orders => Set<Order>();
+    public DbSet<OrderItem> OrderItems => Set<OrderItem>();
+    public DbSet<Table> Tables => Set<Table>();
+    public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<Image> Images => Set<Image>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

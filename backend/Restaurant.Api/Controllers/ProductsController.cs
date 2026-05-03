@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Restaurant.DataAccess.Context;
 using Restaurant.Domain.Entities;
+using Restaurant.Domain.Models.Product;
 
 namespace Restaurant.Api.Controllers;
 

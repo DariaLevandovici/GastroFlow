@@ -18,7 +18,18 @@ interface IngredientItem {
 }
 
 export function CookDashboard() {
-  const { user, logout, orders, updateOrderStatus, unavailableItems, setItemAvailability, inventory, updateInventory } = useApp();
+  const {
+    user,
+    logout,
+    orders,
+    updateOrderStatus,
+    unavailableItems,
+    unavailableIngredients,
+    setItemAvailability,
+    setIngredientAvailability,
+    inventory,
+    updateInventory
+  } = useApp();
   const navigate = useNavigate();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
@@ -44,8 +55,8 @@ export function CookDashboard() {
   const handleCompleteOrder = (orderId: string) => {
     updateOrderStatus(orderId, 'ready');
     setSelectedOrder(null);
-    
-    // Simulate inventory reduction
+
+    // Simulate inventory reduction (mock logic)
     const randomItem = inventory[Math.floor(Math.random() * inventory.length)];
     if (randomItem) {
       updateInventory(randomItem.id, Math.max(0, randomItem.quantity - 2));
@@ -83,35 +94,27 @@ export function CookDashboard() {
   }, []);
 
   useEffect(() => {
-    fetch(API_ENDPOINTS.ingredients)
-      .then(r => r.json())
-      .then((data: IngredientItem[]) => setIngredients(data))
-      .catch(() => {/* silent fail */});
+    const fetchIngredients = () => {
+      fetch(API_ENDPOINTS.ingredients)
+        .then(r => r.json())
+        .then((data: IngredientItem[]) => setIngredients(data))
+        .catch(() => {/* silent fail */ });
+    };
+
+    fetchIngredients();
+    const interval = setInterval(fetchIngredients, 30000);
+    return () => clearInterval(interval);
   }, []);
-
-  // Build a set of ingredient names that are completely out of stock (<= 0).
-  const outOfStockIngNames = new Set(
-    ingredients.filter(i => i.quantity <= 0).map(i => i.name.toLowerCase())
-  );
-
-  // A menu item is auto-unavailable if ANY of its ingredients is out of stock.
-  const autoUnavailableProducts = new Set(
-    menuItems
-      .filter(item => item.ingredients.some(ing => outOfStockIngNames.has(ing.toLowerCase())))
-      .map(item => item.name)
-  );
 
   // Filter menu items for the availability grid
   const filteredMenuItems = menuItems.filter(item => {
-    const isUnavailable = autoUnavailableProducts.has(item.name);
+    const isUnavailable = unavailableItems.includes(item.name);
     const matchesSearch = item.name.toLowerCase().includes(menuSearchTerm.toLowerCase());
     const matchesFilter = menuFilter === 'All' ||
       (menuFilter === 'Available' && !isUnavailable) ||
       (menuFilter === 'Unavailable' && isUnavailable);
     return matchesSearch && matchesFilter;
   });
-
-
 
   return (
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
@@ -185,7 +188,6 @@ export function CookDashboard() {
                       </span>
                     </div>
 
-                    {/* Order Items */}
                     <div className="mb-4 p-3 bg-gray-800 rounded-lg">
                       <p className="text-gray-400 text-sm">Items: {order.items.length} dishes</p>
                       {order.tableNumber && (
@@ -233,7 +235,6 @@ export function CookDashboard() {
                       </span>
                     </div>
 
-                    {/* Waiter Comments */}
                     <div className="mb-4 p-3 bg-gray-800 rounded-lg">
                       <p className="text-gray-400 text-xs mb-1">Waiter Notes:</p>
                       <p className="text-white text-sm">{order.comment || 'No special instructions'}</p>
@@ -256,8 +257,7 @@ export function CookDashboard() {
         {/* Menu Item Availability */}
         <div className="mt-8">
           <h2 className="text-2xl font-bold text-white mb-6">Menu Availability</h2>
-          
-          {/* Search and Filter */}
+
           <div className="mb-6 flex gap-4">
             <Input
               type="text"
@@ -277,7 +277,7 @@ export function CookDashboard() {
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {isLoadingMenu && (
               <p className="col-span-full text-center text-gray-400 py-8">Loading menu...</p>
@@ -286,34 +286,32 @@ export function CookDashboard() {
               <p className="col-span-full text-center text-red-400 py-8">{menuError}</p>
             )}
             {!isLoadingMenu && !menuError && (
-              <>
-            {filteredMenuItems.map(item => {
-              const isUnavailable = autoUnavailableProducts.has(item.name);
-              return (
-                <div
-                  key={item.id}
-                  className={`h-auto p-4 rounded-xl border-2 transition-all text-left ${
-                    isUnavailable
-                      ? 'bg-red-900/30 border-red-600'
-                      : 'bg-green-900/30 border-green-600'
-                  }`}
-                >
-                  <p className="text-white font-bold text-sm mb-1">{item.name}</p>
-                  <p className={`text-xs ${isUnavailable ? 'text-red-400' : 'text-green-400'}`}>
-                    {isUnavailable ? 'Unavailable' : 'Available'}
-                  </p>
-                </div>
-              );
-            })}
-              </>
+              filteredMenuItems.map(item => {
+                const isUnavailable = unavailableItems.includes(item.name);
+                return (
+                  <div
+                    key={item.id}
+                    className={`h-auto p-4 rounded-xl border-2 transition-all text-left ${
+                      isUnavailable
+                        ? 'bg-red-900/30 border-red-600'
+                        : 'bg-green-900/30 border-green-600'
+                    }`}
+                  >
+                    <p className="text-white font-bold text-sm mb-1">{item.name}</p>
+                    <p className={`text-xs ${isUnavailable ? 'text-red-400' : 'text-green-400'}`}>
+                      {isUnavailable ? 'Unavailable' : 'Available'}
+                    </p>
+                  </div>
+                );
+              })
             )}
           </div>
         </div>
+
         {/* Ingredients Availability */}
         <div className="mt-8">
           <h2 className="text-2xl font-bold text-white mb-6">Ingredients Availability</h2>
 
-          {/* Search + Filter */}
           <div className="mb-6 flex gap-4">
             <Input
               type="text"
@@ -338,25 +336,31 @@ export function CookDashboard() {
             {ingredients
               .filter(ing => {
                 const matchesSearch = ing.name.toLowerCase().includes(ingSearchTerm.toLowerCase());
-                const isOutOfStock = ing.quantity <= 0;
                 const isLow = ing.quantity <= ing.minStock;
                 const matchesFilter = ingFilter === 'All' || (ingFilter === 'Low' && isLow) || (ingFilter === 'Ok' && !isLow);
                 return matchesSearch && matchesFilter;
               })
               .map(ing => {
                 const isOutOfStock = ing.quantity <= 0;
+                const isManuallyUnavailable = unavailableIngredients.includes(ing.name.toLowerCase());
+                const effectivelyUnavailable = isOutOfStock || isManuallyUnavailable;
+
                 return (
-                  <div
+                  <Button
                     key={ing.id}
-                    className={`h-auto p-4 rounded-xl border-2 transition-all text-left ${
-                      isOutOfStock ? 'bg-red-900/30 border-red-600' : 'bg-green-900/30 border-green-600'
+                    onClick={() => setIngredientAvailability(ing.name, effectivelyUnavailable)}
+                    variant="outline"
+                    className={`h-auto p-4 rounded-xl border-2 transition-all text-left flex-col items-start hover:scale-[1.02] ${
+                      effectivelyUnavailable
+                        ? 'bg-red-900/30 border-red-600 hover:bg-red-900/40'
+                        : 'bg-green-900/30 border-green-600 hover:bg-green-900/40'
                     }`}
                   >
-                    <p className="text-white font-bold text-sm mb-1 truncate">{ing.name}</p>
-                    <p className={`text-xs ${isOutOfStock ? 'text-red-400' : 'text-green-400'}`}>
-                      {isOutOfStock ? 'Out of Stock' : `${ing.quantity} ${ing.unit}`}
+                    <p className="text-white font-bold text-sm mb-1 truncate w-full capitalize">{ing.name}</p>
+                    <p className={`text-xs ${effectivelyUnavailable ? 'text-red-400' : 'text-green-400'}`}>
+                      {isOutOfStock ? 'Out of Stock' : isManuallyUnavailable ? 'Manually Disabled' : `${ing.quantity} ${ing.unit}`}
                     </p>
-                  </div>
+                  </Button>
                 );
               })
             }
@@ -369,4 +373,4 @@ export function CookDashboard() {
       </div>
     </div>
   );
-}
+}

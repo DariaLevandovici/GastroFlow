@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Restaurant.DataAccess")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+59a71e5e3938f951574f87312558a5311090d7a2")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+becb253217e067ae3ba06ef2aef15de3f27f9aac")]
 [assembly: System.Reflection.AssemblyProductAttribute("Restaurant.DataAccess")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Restaurant.DataAccess")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
