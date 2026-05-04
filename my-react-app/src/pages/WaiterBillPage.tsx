@@ -8,24 +8,18 @@ export function WaiterBillPage() {
   const navigate = useNavigate();
   const { orders, tables, updateTableStatus, finalizeOrder } = useApp();
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
-const [showSplit, setShowSplit] = useState(false);
+  const [showSplit, setShowSplit] = useState(false);
   const [splitCountInput, setSplitCountInput] = useState('2');
 
-  // Filter orders for dine-in that are ready or delivered
   const tableOrders = orders.filter(o => o.type === 'dine-in' && (o.status === 'ready' || o.status === 'delivered'));
 
-  const selectedTableOrders = selectedTable 
+  const selectedTableOrders = selectedTable
     ? tableOrders.filter((_, idx) => tables[idx % tables.length]?.number === selectedTable)
     : [];
 
   const totalBill = selectedTableOrders.reduce((sum, order) => sum + order.total, 0);
   const tax = totalBill * 0.1;
   const grandTotal = totalBill + tax;
-  const parsedSplitCount = Number(splitCountInput);
-  const isSplitCountInvalid =
-    splitCountInput.trim() === '' || !Number.isInteger(parsedSplitCount) || parsedSplitCount < 1;
-  const splitCount = isSplitCountInvalid ? 1 : parsedSplitCount;
-  const amountPerPerson = grandTotal / splitCount;
 
   const handlePrintBill = () => {
     window.print();
@@ -71,11 +65,10 @@ const [showSplit, setShowSplit] = useState(false);
                     key={table.id}
                     onClick={() => setSelectedTable(table.number)}
                     variant="outline"
-                    className={`h-auto p-4 border-2 transition-all ${
-                      selectedTable === table.number
-                        ? 'bg-blue-900/30 border-blue-600'
-                        : 'bg-gray-800 border-gray-700 hover:border-gray-600'
-                    }`}
+                    className={`h-auto p-4 border-2 transition-all ${selectedTable === table.number
+                      ? 'bg-blue-900/30 border-blue-600'
+                      : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                      }`}
                   >
                     <p className="text-white font-bold text-center text-lg">{table.number}</p>
                     <p className="text-gray-400 text-xs text-center mt-1">Occupied</p>
@@ -123,7 +116,6 @@ const [showSplit, setShowSplit] = useState(false);
                       {selectedTableOrders.length === 0 ? (
                         <p className="text-gray-400 text-center py-8">No orders for this table</p>
                       ) : (
-                        // Mock items based on order total
                         <>
                           <div className="flex justify-between py-3 border-b border-gray-700">
                             <div className="flex-1">
@@ -177,68 +169,58 @@ const [showSplit, setShowSplit] = useState(false);
                     </div>
                   </div>
 
-                  <div className="mb-8 rounded-2xl border border-gray-800 bg-[#1f1f1f] p-6">
-                    <h3 className="mb-4 text-xl font-bold text-white">Split Bill</h3>
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                      <div className="max-w-xs">
-                        <label className="mb-2 block text-sm text-gray-400">Number of People</label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={splitCountInput}
-                          onChange={(e) => setSplitCountInput(e.target.value)}
-                          className="h-11 w-full rounded-lg border border-gray-700 bg-[#242424] px-4 text-white outline-none transition-colors focus:border-blue-600"
-                        />
-                        {isSplitCountInvalid && (
-                          <p className="mt-2 text-sm text-red-400">Number of people must be at least 1.</p>
-                        )}
+                  {/* Split Bill Section */}
+                  {showSplit && (
+                    <div className="mb-6 p-4 bg-gray-800 rounded-xl border border-gray-700">
+                      <h4 className="text-white font-bold mb-3">Split Bill</h4>
+                      <div className="flex items-center gap-4 mb-3">
+                        <p className="text-gray-400 text-sm">Number of people:</p>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => setSplitCountInput(String(Math.max(2, Number(splitCountInput) - 1)))}
+                            className="w-8 h-8 bg-gray-700 text-white rounded-full hover:bg-gray-600"
+                          >
+                            -
+                          </button>
+                          <span className="text-white font-bold w-6 text-center">{splitCountInput}</span>
+                          <button
+                            onClick={() => setSplitCountInput(String(Number(splitCountInput) + 1))}
+                            className="w-8 h-8 bg-gray-700 text-white rounded-full hover:bg-gray-600"
+                          >
+                            +
+                          </button>
+                        </div>
                       </div>
-                      <div className="rounded-xl border border-blue-800 bg-blue-900/20 px-5 py-4">
-                        <p className="text-sm text-gray-400">Amount per person</p>
-                        <p className="text-2xl font-bold text-blue-400">{amountPerPerson.toFixed(2)} MDL</p>
+                      <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-3">
+                        <p className="text-gray-400 text-sm">Each person pays:</p>
+                        <p className="text-blue-400 font-bold text-xl">
+                          {(566.50 / Number(splitCountInput)).toFixed(2)} MDL
+                        </p>
                       </div>
                     </div>
-                  </div>
+                  )}
 
-                 {/* Split Bill Section */}
-{showSplit && (
-  <div className="mb-6 p-4 bg-gray-800 rounded-xl border border-gray-700">
-    <h4 className="text-white font-bold mb-3">Split Bill</h4>
-    <div className="flex items-center gap-4 mb-3">
-      <p className="text-gray-400 text-sm">Number of people:</p>
-      <div className="flex items-center gap-2">
-<button onClick={() => setSplitCountInput(String(Math.max(2, Number(splitCountInput) - 1)))} className="w-8 h-8 bg-gray-700 text-white rounded-full hover:bg-gray-600">-</button>
-<span className="text-white font-bold w-6 text-center">{splitCountInput}</span>
-<button onClick={() => setSplitCountInput(String(Number(splitCountInput) + 1))} className="w-8 h-8 bg-gray-700 text-white rounded-full hover:bg-gray-600">+</button>
-      </div>
-    </div>
-    <div className="bg-blue-900/20 border border-blue-800 rounded-lg p-3">
-      <p className="text-gray-400 text-sm">Each person pays:</p>
-      <p className="text-blue-400 font-bold text-xl">{(566.50 / Number(splitCountInput)).toFixed(2)} MDL</p>
-    </div>
-  </div>
-)}
-{/* Actions */}
-<div className="flex flex-col gap-3">
-  <Button
-    onClick={() => setShowSplit(!showSplit)}
-    variant="outline"
-    className="w-full border-blue-600 text-blue-400 hover:bg-blue-900/30"
-  >
-    <Users className="w-4 h-4" />
-    {showSplit ? "Hide Split Bill" : "Split Bill"}
-  </Button>
-  <div className="flex gap-4">
-    <Button onClick={handlePrintBill} variant="secondary" className="flex-1">
-      <Printer className="w-4 h-4" />
-      Print Bill
-    </Button>
-    <Button onClick={handleGenerateBill} className="flex-1">
-      <Download className="w-4 h-4" />
-      Finalize & Close
-    </Button>
-  </div>
-</div>
+                  {/* Actions */}
+                  <div className="flex flex-col gap-3">
+                    <Button
+                      onClick={() => setShowSplit(!showSplit)}
+                      variant="outline"
+                      className="w-full border-blue-600 text-blue-400 hover:bg-blue-900/30"
+                    >
+                      <Users className="w-4 h-4" />
+                      {showSplit ? 'Hide Split Bill' : 'Split Bill'}
+                    </Button>
+                    <div className="flex gap-4">
+                      <Button onClick={handlePrintBill} variant="secondary" className="flex-1">
+                        <Printer className="w-4 h-4" />
+                        Print Bill
+                      </Button>
+                      <Button onClick={handleGenerateBill} className="flex-1">
+                        <Download className="w-4 h-4" />
+                        Finalize & Close
+                      </Button>
+                    </div>
+                  </div>
 
                   <p className="text-center text-gray-500 text-xs mt-6">
                     Thank you for dining with us!
