@@ -1,32 +1,32 @@
 import { useState } from 'react';
 import { Search, ShoppingCart, User, LogOut } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router';
+import { useNavigate } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 
 export function Header() {
   const [language, setLanguage] = useState<'RO' | 'EN'>('RO');
-  const { pathname } = useLocation();
   const navigate = useNavigate();
   const { cart, user, logout, searchQuery, setSearchQuery } = useApp();
+
   const labels = language === 'RO'
     ? {
-        reservation: 'Rezervare',
-        order: 'Comandă',
-        menu: 'Menu',
-        career: 'Cariere',
-        login: 'Autentificare',
-        logout: 'Deconectare',
-      }
+      reservation: 'Rezervare',
+      order: 'Comandă',
+      menu: 'Meniu',
+      career: 'Cariere',
+      login: 'Autentificare',
+      logout: 'Deconectare',
+    }
     : {
-        reservation: 'Reservation',
-        order: 'Order',
-        menu: 'Menu',
-        career: 'Career',
-        login: 'Login',
-        logout: 'Logout',
-      };
+      reservation: 'Reservation',
+      order: 'Order',
+      menu: 'Menu',
+      career: 'Career',
+      login: 'Login',
+      logout: 'Logout',
+    };
 
   const handleLogout = () => {
     logout();
@@ -45,9 +45,9 @@ export function Header() {
               </div>
               <h1 className="text-xl font-bold text-white sm:text-2xl">GastroFlow</h1>
             </Button>
-            
+
             {/* Cart */}
-            <Button 
+            <Button
               onClick={() => navigate('/cart')}
               variant="ghost"
               size="icon"
@@ -76,11 +76,11 @@ export function Header() {
             <Button variant="ghost" className="text-gray-300 hover:text-white px-2" onClick={() => navigate('/career')}>
               {labels.career}
             </Button>
-  
           </nav>
 
-          {/* Right Side - Search & Login */}
+          {/* Right Side */}
           <div className="flex items-center gap-2 sm:gap-4">
+            {/* RO/EN Button */}
             <Button
               type="button"
               variant="outline"
@@ -104,26 +104,16 @@ export function Header() {
 
             {/* User Menu or Login */}
             {user ? (
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => navigate('/account')}
-                  variant="secondary"
-                  className="h-10 px-3 sm:px-4"
-                >
-                  <User className="w-4 h-4" />
-                  <span className="hidden text-sm sm:inline">{user.name}</span>
-                </Button>
-                <Button
-                  onClick={handleLogout}
-                  variant="outline"
-                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center px-0 sm:min-w-[150px] sm:px-4"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span className="hidden sm:inline">{labels.logout}</span>
-                </Button>
-              </div>
+              <Button
+                onClick={() => navigate('/account')}
+                variant="secondary"
+                className="h-10 px-3 sm:px-4"
+              >
+                <User className="w-4 h-4" />
+                <span className="hidden text-sm sm:inline">{user.name}</span>
+              </Button>
             ) : (
-              <Button 
+              <Button
                 onClick={() => navigate('/login')}
                 className="flex h-10 w-10 flex-shrink-0 items-center justify-center px-0 sm:min-w-[150px] sm:px-6"
               >
@@ -133,6 +123,7 @@ export function Header() {
             )}
           </div>
 
+          {/* Mobile Search */}
           <div className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-[#242424] px-4 py-2 md:hidden">
             <Search className="h-4 w-4 flex-shrink-0 text-gray-400" />
             <Input
