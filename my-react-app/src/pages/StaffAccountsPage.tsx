@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Lock, Mail, ShieldCheck, User } from 'lucide-react';
+import { Lock, Mail, ShieldCheck, User, ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
 export function StaffAccountsPage() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -16,9 +18,23 @@ export function StaffAccountsPage() {
     e.preventDefault();
   };
 
+  const handleCancel = () => {
+    setFormData({ name: '', email: '', role: 'waiter', password: '' });
+  };
+
   return (
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
       <div className="container mx-auto max-w-3xl px-6">
+
+        {/* Sageata inapoi */}
+        <button
+          onClick={() => navigate('/dashboard/manager')}
+          className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm">Back</span>
+        </button>
+
         <div className="mb-8 text-center">
           <h1 className="mb-4 text-4xl font-bold text-white">Staff Accounts</h1>
           <p className="text-gray-400">Create internal accounts for restaurant staff members.</p>
@@ -85,9 +101,20 @@ export function StaffAccountsPage() {
               />
             </div>
 
-            <Button type="submit" className="h-12 w-full">
-              Create Staff Account
-            </Button>
+            {/* Butoane */}
+            <div className="flex gap-3 pt-2">
+              <Button type="submit" className="flex-1 h-12">
+                Create Staff Account
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                className="h-12 px-6 border-red-800 text-red-400 hover:bg-red-900/20"
+                onClick={handleCancel}
+              >
+                Cancel
+              </Button>
+            </div>
           </form>
         </div>
       </div>

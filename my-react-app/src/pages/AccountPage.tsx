@@ -38,7 +38,7 @@ export function AccountPage() {
   }
 
   const myOrders = orders;
-  
+
   const myReservations = [
     { id: '1', date: '2026-05-10', time: '19:00', guests: 2, status: 'confirmed', table: 3 },
     { id: '2', date: '2026-04-20', time: '20:00', guests: 4, status: 'completed', table: 5 },
@@ -195,10 +195,9 @@ export function AccountPage() {
                             <p className="text-white font-bold">Order #{order.id.slice(0, 8)}</p>
                             <p className="text-gray-400 text-sm capitalize">{order.type}</p>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
-                            order.status === 'delivered' ? 'bg-green-900/50 text-green-400' :
-                            'bg-blue-900/50 text-blue-400'
-                          }`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${order.status === 'delivered' ? 'bg-green-900/50 text-green-400' :
+                              'bg-blue-900/50 text-blue-400'
+                            }`}>
                             {order.status}
                           </span>
                         </div>
@@ -236,11 +235,10 @@ export function AccountPage() {
                             <p className="text-gray-400 text-sm">{res.date} at {res.time}</p>
                             <p className="text-gray-400 text-sm">{res.guests} guests</p>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${
-                            res.status === 'confirmed' ? 'bg-green-900/50 text-green-400' :
-                            res.status === 'completed' ? 'bg-blue-900/50 text-blue-400' :
-                            'bg-red-900/50 text-red-400'
-                          }`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-bold capitalize ${res.status === 'confirmed' ? 'bg-green-900/50 text-green-400' :
+                              res.status === 'completed' ? 'bg-blue-900/50 text-blue-400' :
+                                'bg-red-900/50 text-red-400'
+                            }`}>
                             {res.status}
                           </span>
                         </div>

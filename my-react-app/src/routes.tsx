@@ -17,79 +17,31 @@ import { CookRecipesPage } from './pages/CookRecipesPage';
 import { ManagerDashboard } from './pages/ManagerDashboard';
 import { StaffAccountsPage } from './pages/StaffAccountsPage';
 import { FeedbackPage } from './pages/FeedbackPage';
+import { PrivacyPage } from './pages/PrivacyPage';
+import { TermsPage } from './pages/TermsPage';
+import { CookiesPage } from './pages/CookiesPage';
 import { Layout } from './components/layout/Layout';
 
 export const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <Layout><HomePage /></Layout>
-  },
-  {
-    path: '/menu',
-    element: <Layout><MenuPage /></Layout>
-  },
-  {
-    path: '/cart',
-    element: <Layout><CartPage /></Layout>
-  },
-  {
-    path: '/reservation',
-    element: <Layout><ReservationPage /></Layout>
-  },
-  {
-    path: '/career',
-    element: <Layout><CareerPage /></Layout>
-  },
-  {
-    path: '/feedback',
-    element: <Layout><FeedbackPage /></Layout>
-  },
-  {
-    path: '/order',
-    element: <Layout><OrderPage /></Layout>
-  },
-  {
-    path: '/login',
-    element: <Layout showFooter={false}><LoginPage /></Layout>
-  },
-  {
-    path: '/register',
-    element: <Layout showFooter={false}><RegisterPage /></Layout>
-  },
-  {
-    path: '/account',
-    element: <Layout showFooter={false}><AccountPage /></Layout>
-  },
-  {
-    path: '/dashboard/client',
-    element: <Layout showFooter={false}><ClientDashboard /></Layout>
-  },
-  {
-    path: '/dashboard/waiter',
-    element: <WaiterDashboard />
-  },
-  {
-    path: '/dashboard/waiter/create-order',
-    element: <WaiterCreateOrder />
-  },
-  {
-    path: '/dashboard/waiter/bill',
-    element: <WaiterBillPage />
-  },
-  {
-    path: '/dashboard/cook',
-    element: <CookDashboard />
-  },
-  {
-    path: '/dashboard/cook/recipes',
-    element: <CookRecipesPage />
-  },
-  {
-    path: '/dashboard/manager',
-    element: <ManagerDashboard />
-  },
-  {
-    path: '/dashboard/manager/staff-accounts',
-    element: <StaffAccountsPage />
-  }
+  { path: '/', element: <Layout><HomePage /></Layout> },
+  { path: '/menu', element: <Layout><MenuPage /></Layout> },
+  { path: '/cart', element: <Layout><CartPage /></Layout> },
+  { path: '/reservation', element: <Layout><ReservationPage /></Layout> },
+  { path: '/career', element: <Layout><CareerPage /></Layout> },
+  { path: '/feedback', element: <Layout><FeedbackPage /></Layout> },
+  { path: '/order', element: <Layout><OrderPage /></Layout> },
+  { path: '/privacy', element: <Layout><PrivacyPage /></Layout> },
+  { path: '/terms', element: <Layout><TermsPage /></Layout> },
+  { path: '/cookies', element: <Layout><CookiesPage /></Layout> },
+  { path: '/login', element: <Layout showFooter={false}><LoginPage /></Layout> },
+  { path: '/register', element: <Layout showFooter={false}><RegisterPage /></Layout> },
+  { path: '/account', element: <Layout showFooter={false}><AccountPage /></Layout> },
+  { path: '/dashboard/client', element: <Layout showFooter={false}><ClientDashboard /></Layout> },
+  { path: '/dashboard/waiter', element: <WaiterDashboard /> },
+  { path: '/dashboard/waiter/create-order', element: <WaiterCreateOrder /> },
+  { path: '/dashboard/waiter/bill', element: <WaiterBillPage /> },
+  { path: '/dashboard/cook', element: <CookDashboard /> },
+  { path: '/dashboard/cook/recipes', element: <CookRecipesPage /> },
+  { path: '/dashboard/manager', element: <ManagerDashboard /> },
+  { path: '/dashboard/manager/staff-accounts', element: <StaffAccountsPage /> },
 ]);

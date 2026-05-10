@@ -92,11 +92,10 @@ export function ManagerDashboard() {
               key={tab.id}
               onClick={() => setSelectedTab(tab.id as any)}
               variant={selectedTab === tab.id ? 'default' : 'secondary'}
-              className={`flex items-center gap-2 px-6 whitespace-nowrap ${
-                selectedTab === tab.id
+              className={`flex items-center gap-2 px-6 whitespace-nowrap ${selectedTab === tab.id
                   ? 'bg-blue-700 text-white'
                   : 'bg-[#242424] text-gray-400 hover:bg-gray-800'
-              }`}
+                }`}
             >
               <tab.icon className="w-4 h-4" />
               {tab.label}
@@ -116,20 +115,6 @@ export function ManagerDashboard() {
                   className="px-6"
                 >
                   Create Staff Account
-                </Button>
-                <Button
-                  onClick={() => navigate('/')}
-                  variant="secondary"
-                  className="px-6"
-                >
-                  Go Back
-                </Button>
-                <Button
-                  variant="destructive"
-                  className="px-6 bg-red-900/30 hover:bg-red-900/50 text-red-400"
-                  onClick={() => setSelectedTab('overview')}
-                >
-                  Cancel
                 </Button>
               </div>
             </div>
@@ -154,12 +139,11 @@ export function ManagerDashboard() {
                         <td className="p-4 text-white font-semibold">{order.id}</td>
                         <td className="p-4 text-gray-400 capitalize">{order.type}</td>
                         <td className="p-4">
-                          <span className={`px-3 py-1 rounded-full text-xs ${
-                            order.status === 'delivered' ? 'bg-green-900/30 text-green-400' :
-                            order.status === 'ready' ? 'bg-blue-900/30 text-blue-400' :
-                            order.status === 'in-preparation' ? 'bg-yellow-900/30 text-yellow-400' :
-                            'bg-gray-800 text-gray-400'
-                          }`}>
+                          <span className={`px-3 py-1 rounded-full text-xs ${order.status === 'delivered' ? 'bg-green-900/30 text-green-400' :
+                              order.status === 'ready' ? 'bg-blue-900/30 text-blue-400' :
+                                order.status === 'in-preparation' ? 'bg-yellow-900/30 text-yellow-400' :
+                                  'bg-gray-800 text-gray-400'
+                            }`}>
                             {order.status.replace('-', ' ')}
                           </span>
                         </td>
@@ -224,11 +208,10 @@ export function ManagerDashboard() {
                           </>
                         )}
                         {reservation.status !== 'pending' && (
-                          <span className={`px-4 py-2 rounded-full text-sm ${
-                            reservation.status === 'confirmed' ? 'bg-green-900/30 text-green-400' :
-                            reservation.status === 'completed' ? 'bg-blue-900/30 text-blue-400' :
-                            'bg-red-900/30 text-red-400'
-                          }`}>
+                          <span className={`px-4 py-2 rounded-full text-sm ${reservation.status === 'confirmed' ? 'bg-green-900/30 text-green-400' :
+                              reservation.status === 'completed' ? 'bg-blue-900/30 text-blue-400' :
+                                'bg-red-900/30 text-red-400'
+                            }`}>
                             {reservation.status}
                           </span>
                         )}
