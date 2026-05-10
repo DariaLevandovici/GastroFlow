@@ -21,7 +21,7 @@ public class AppDbContext : DbContext
     public DbSet<Table> Tables => Set<Table>();
     public DbSet<Reservation> Reservations => Set<Reservation>();
     public DbSet<Image> Images => Set<Image>();
-
+    public DbSet<Address> Addresses => Set<Address>();
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);

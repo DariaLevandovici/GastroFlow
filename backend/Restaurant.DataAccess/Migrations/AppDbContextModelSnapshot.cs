@@ -40,7 +40,7 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Categories");
+                    b.ToTable("Categories", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.Image", b =>
@@ -72,7 +72,7 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Images");
+                    b.ToTable("Images", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.Ingredient", b =>
@@ -103,7 +103,7 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Ingredients");
+                    b.ToTable("Ingredients", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.Order", b =>
@@ -143,7 +143,7 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasIndex("WaiterId");
 
-                    b.ToTable("Orders");
+                    b.ToTable("Orders", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.OrderItem", b =>
@@ -172,7 +172,7 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("OrderItems");
+                    b.ToTable("OrderItems", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.Product", b =>
@@ -215,7 +215,7 @@ namespace Restaurant.DataAccess.Migrations
                     b.HasIndex("ImageId")
                         .IsUnique();
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.ProductIngredient", b =>
@@ -236,7 +236,7 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasIndex("IngredientId");
 
-                    b.ToTable("ProductIngredients");
+                    b.ToTable("ProductIngredients", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.Recipe", b =>
@@ -265,7 +265,7 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasIndex("ProductId");
 
-                    b.ToTable("Recipes");
+                    b.ToTable("Recipes", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.Reservation", b =>
@@ -304,7 +304,7 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasIndex("TableId");
 
-                    b.ToTable("Reservations");
+                    b.ToTable("Reservations", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.Table", b =>
@@ -326,7 +326,7 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Tables");
+                    b.ToTable("Tables", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.User", b =>
@@ -361,7 +361,7 @@ namespace Restaurant.DataAccess.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Users");
+                    b.ToTable("Users", (string)null);
                 });
 
             modelBuilder.Entity("Restaurant.Domain.Entities.Order", b =>
