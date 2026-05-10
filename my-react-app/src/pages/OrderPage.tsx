@@ -41,7 +41,7 @@ export function OrderPage() {
 
   const cartTotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     const newErrors: string[] = [];
 
     if (cart.length === 0) {
@@ -58,6 +58,30 @@ export function OrderPage() {
     }
 
     setErrors([]);
+
+    if (selectedType === 'delivery' && address.trim()) {
+      try {
+        const token = localStorage.getItem('token');
+        const parts = address.trim().split(',');
+        await fetch('http://localhost:5224/api/Address', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            street: parts[0]?.trim() || address.trim(),
+            city: parts[1]?.trim() || 'Chisinau',
+            postalCode: parts[2]?.trim() || '2000',
+            country: 'Moldova',
+            additionalInfo: ''
+          })
+        });
+      } catch (e) {
+        console.error('Failed to save address', e);
+      }
+    }
+
     addOrder({
       type: selectedType,
       items: cart,
@@ -78,7 +102,6 @@ export function OrderPage() {
       <div className="container mx-auto px-6 max-w-6xl">
         <h1 className="text-4xl font-bold text-white mb-8">Order Management</h1>
 
-        {/* Success message */}
         {successMsg && (
           <div className="mb-6 flex items-center gap-3 bg-green-900/30 border border-green-700 text-green-400 px-6 py-4 rounded-2xl">
             <CheckCircle className="w-5 h-5 flex-shrink-0" />
@@ -86,7 +109,6 @@ export function OrderPage() {
           </div>
         )}
 
-        {/* Validation errors */}
         {errors.length > 0 && (
           <div className="mb-6 bg-red-900/20 border border-red-800 rounded-2xl px-6 py-4">
             <ul className="space-y-1">
@@ -100,7 +122,6 @@ export function OrderPage() {
           </div>
         )}
 
-        {/* Order Type Selection */}
         <div className="mb-8">
           <h2 className="text-2xl font-bold text-white mb-6">Select Order Type</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -110,8 +131,8 @@ export function OrderPage() {
                 onClick={() => setSelectedType(type)}
                 variant="outline"
                 className={`h-auto p-6 border-2 transition-all text-left ${selectedType === type
-                    ? 'bg-blue-900/30 border-blue-600'
-                    : 'bg-[#242424] border-gray-800 hover:border-gray-700'
+                  ? 'bg-blue-900/30 border-blue-600'
+                  : 'bg-[#242424] border-gray-800 hover:border-gray-700'
                   }`}
               >
                 <Icon className={`w-12 h-12 mb-4 ${selectedType === type ? 'text-blue-400' : 'text-gray-400'}`} />
@@ -121,7 +142,6 @@ export function OrderPage() {
             ))}
           </div>
 
-          {/* Delivery Address */}
           {selectedType === 'delivery' && (
             <div className="mt-6 bg-[#242424] rounded-2xl p-6 border border-gray-800">
               <label className="flex items-center gap-2 text-white mb-3">
@@ -130,15 +150,15 @@ export function OrderPage() {
               </label>
               <Input
                 type="text"
-                placeholder="Enter your full delivery address..."
+                placeholder="Street, City, PostalCode"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
               />
+              <p className="text-gray-500 text-xs mt-2">Format: Street, City, PostalCode (ex: George Cosbuc 17, Chisinau, 2000)</p>
             </div>
           )}
         </div>
 
-        {/* Order Summary + Place Order button */}
         <div className="mb-12 bg-[#242424] rounded-2xl p-6 border border-gray-800">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-white">Order Summary</h2>
@@ -154,31 +174,22 @@ export function OrderPage() {
                   </li>
                 ))}
               </ul>
-              <Button
-                onClick={handlePlaceOrder}
-                className="w-full h-12"
-              >
+              <Button onClick={handlePlaceOrder} className="w-full h-12">
                 Place Order
               </Button>
             </>
           ) : (
             <>
               <p className="text-gray-500 text-sm mb-6">No items in cart yet. Visit the Menu to add items.</p>
-              <Button
-                onClick={() => navigate('/menu')}
-                variant="secondary"
-                className="w-full h-12"
-              >
+              <Button onClick={() => navigate('/menu')} variant="secondary" className="w-full h-12">
                 Browse Menu
               </Button>
             </>
           )}
         </div>
 
-        {/* Active Orders */}
         <div>
           <h2 className="text-2xl font-bold text-white mb-6">Your Orders</h2>
-
           {clientOrders.length === 0 ? (
             <div className="bg-[#242424] rounded-2xl p-12 border border-gray-800 text-center">
               <ShoppingBag className="w-16 h-16 text-gray-700 mx-auto mb-4" />
@@ -192,7 +203,6 @@ export function OrderPage() {
 
                 return (
                   <div key={order.id} className="bg-[#242424] rounded-2xl p-6 border border-gray-800">
-                    {/* Order Header */}
                     <div className="flex justify-between items-start mb-6">
                       <div>
                         <h3 className="text-xl font-bold text-white mb-2">Order #{order.id}</h3>
@@ -221,22 +231,15 @@ export function OrderPage() {
                       )}
                     </div>
 
-                    {/* Order Status Timeline */}
                     <div className="relative mb-6">
                       <div className="flex justify-between items-center">
                         {statusSteps.map((status, index) => {
                           const isActive = index <= currentStatusIndex;
                           const isCurrent = index === currentStatusIndex;
-
                           return (
                             <div key={status} className="flex-1 relative">
                               <div className="flex flex-col items-center">
-                                <div
-                                  className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${isActive
-                                      ? 'bg-blue-600 border-blue-600 text-white'
-                                      : 'bg-gray-800 border-gray-700 text-gray-500'
-                                    } ${isCurrent ? 'ring-4 ring-blue-600/30' : ''}`}
-                                >
+                                <div className={`w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all ${isActive ? 'bg-blue-600 border-blue-600 text-white' : 'bg-gray-800 border-gray-700 text-gray-500'} ${isCurrent ? 'ring-4 ring-blue-600/30' : ''}`}>
                                   {isActive ? '✓' : index + 1}
                                 </div>
                                 <span className={`text-xs mt-2 text-center ${isActive ? 'text-white' : 'text-gray-500'}`}>
@@ -244,10 +247,7 @@ export function OrderPage() {
                                 </span>
                               </div>
                               {index < statusSteps.length - 1 && (
-                                <div
-                                  className={`absolute top-5 left-1/2 w-full h-0.5 -z-10 transition-all ${isActive ? 'bg-blue-600' : 'bg-gray-800'
-                                    }`}
-                                />
+                                <div className={`absolute top-5 left-1/2 w-full h-0.5 -z-10 transition-all ${isActive ? 'bg-blue-600' : 'bg-gray-800'}`} />
                               )}
                             </div>
                           );
@@ -255,7 +255,6 @@ export function OrderPage() {
                       </div>
                     </div>
 
-                    {/* Delivery Address */}
                     {order.address && (
                       <div className="flex items-start gap-2 text-sm text-gray-400 bg-gray-800 p-3 rounded-lg">
                         <MapPin className="w-4 h-4 mt-0.5 text-blue-400" />
@@ -263,15 +262,14 @@ export function OrderPage() {
                       </div>
                     )}
 
-                    {/* Estimated Time */}
                     {order.status !== 'delivered' && (
                       <div className="mt-4 p-4 bg-blue-900/20 border border-blue-800 rounded-lg">
                         <p className="text-blue-400 text-sm">
                           Estimated time: {
                             order.status === 'confirmed' ? '30-40 minutes' :
                               order.status === 'draft' ? 'Waiting to be sent to kitchen' :
-                              order.status === 'in-preparation' ? '15-20 minutes' :
-                                '5 minutes'
+                                order.status === 'in-preparation' ? '15-20 minutes' :
+                                  '5 minutes'
                           }
                         </p>
                       </div>
