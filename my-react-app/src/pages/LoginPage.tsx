@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Lock, Mail, User, Users } from 'lucide-react';
 import { useNavigate } from 'react-router';
@@ -35,6 +35,9 @@ function dashboardPathForRole(role: string) {
 export function LoginPage() {
   const { login, setAuthenticatedUser, t } = useApp();
   const navigate = useNavigate();
+  const titleParts = t.login.title.split('GastroFlow');
+  const [typedSubtitle, setTypedSubtitle] = useState('');
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [loginType, setLoginType] = useState<'client' | 'staff'>('client');
   const [formData, setFormData] = useState({
     email: '',
@@ -53,6 +56,41 @@ export function LoginPage() {
     setLoginType(nextType);
     clearMessages();
   };
+
+  useEffect(() => {
+    const subtitle = t.login.subtitle;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setTypedSubtitle(subtitle);
+      setIsTypingComplete(true);
+      return;
+    }
+
+    let index = 0;
+    let intervalId: number | undefined;
+
+    setTypedSubtitle('');
+    setIsTypingComplete(false);
+
+    const startTimeout = window.setTimeout(() => {
+      intervalId = window.setInterval(() => {
+        index += 1;
+        setTypedSubtitle(subtitle.slice(0, index));
+
+        if (index >= subtitle.length && intervalId) {
+          window.clearInterval(intervalId);
+          setIsTypingComplete(true);
+        }
+      }, 35);
+    }, 300);
+
+    return () => {
+      window.clearTimeout(startTimeout);
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [t.login.subtitle]);
 
   const tryDemoStaffLogin = () => {
     const normalizedEmail = formData.email.trim().toLowerCase();
@@ -123,11 +161,108 @@ export function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
-      <div className="container mx-auto px-6 max-w-md">
+    <div className="relative min-h-screen overflow-hidden bg-[#1a1a1a] pt-24 pb-16">
+      <style>{`
+        @keyframes loginFadeUp {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes loginAmbientGlow {
+          0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.2; }
+          50% { transform: translate3d(12px, -10px, 0) scale(1.04); opacity: 0.32; }
+        }
+
+        @keyframes loginLogoPulse {
+          0%, 100% { box-shadow: 0 0 0 rgba(59, 130, 246, 0); }
+          50% { box-shadow: 0 0 24px rgba(59, 130, 246, 0.42); }
+        }
+
+        @keyframes loginCursorBlink {
+          0%, 42% { opacity: 1; }
+          43%, 100% { opacity: 0; }
+        }
+
+        .login-title-enter {
+          opacity: 0;
+          animation: loginFadeUp 650ms ease-out forwards;
+        }
+
+        .login-subtitle-enter {
+          opacity: 0;
+          animation: loginFadeUp 650ms ease-out 200ms forwards;
+        }
+
+        .login-system-enter {
+          opacity: 0;
+          animation: loginFadeUp 650ms ease-out 360ms forwards;
+        }
+
+        .login-typing-cursor {
+          display: inline-block;
+          margin-left: 2px;
+          color: rgb(96, 165, 250);
+          text-shadow: 0 0 10px rgba(96, 165, 250, 0.55);
+          animation: loginCursorBlink 900ms steps(1, end) infinite;
+        }
+
+        .login-typing-cursor-complete {
+          animation: none;
+          opacity: 1;
+        }
+
+        .login-subtitle-measure {
+          visibility: hidden;
+          pointer-events: none;
+        }
+
+        .login-ambient-glow {
+          animation: loginAmbientGlow 12s ease-in-out infinite;
+        }
+
+        header .bg-gradient-to-br.from-blue-600.to-blue-800 {
+          animation: loginLogoPulse 4.8s ease-in-out infinite;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .login-title-enter,
+          .login-subtitle-enter,
+          .login-system-enter,
+          .login-typing-cursor,
+          .login-ambient-glow,
+          header .bg-gradient-to-br.from-blue-600.to-blue-800 {
+            animation: none;
+            opacity: 1;
+          }
+        }
+      `}</style>
+
+      <div className="pointer-events-none absolute left-[10%] top-24 h-44 w-44 rounded-full bg-blue-700/10 blur-3xl login-ambient-glow" />
+      <div className="pointer-events-none absolute right-[12%] top-48 h-36 w-36 rounded-full bg-sky-500/10 blur-3xl login-ambient-glow [animation-delay:1.8s]" />
+      <div className="pointer-events-none absolute bottom-20 left-1/2 h-48 w-48 -translate-x-1/2 rounded-full bg-blue-500/5 blur-3xl login-ambient-glow [animation-delay:3.2s]" />
+
+      <div className="container relative mx-auto px-6 max-w-md">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-white mb-4">{t.login.title}</h1>
-          <p className="text-gray-400">{t.login.subtitle}</p>
+          <h1 className="login-title-enter text-4xl font-bold text-white mb-4">
+            {titleParts[0]}
+            <span className="bg-gradient-to-r from-blue-300 via-sky-400 to-blue-600 bg-clip-text text-transparent drop-shadow-[0_0_18px_rgba(59,130,246,0.25)]">
+              GastroFlow
+            </span>
+            {titleParts.slice(1).join('GastroFlow')}
+          </h1>
+          <p className="login-subtitle-enter relative text-gray-400" aria-label={t.login.subtitle}>
+            <span aria-hidden="true" className="login-subtitle-measure block">
+              {t.login.subtitle}
+            </span>
+            <span aria-hidden="true" className="absolute inset-0">
+              {typedSubtitle}
+              <span className={`login-typing-cursor${isTypingComplete ? ' login-typing-cursor-complete' : ''}`}>|</span>
+            </span>
+          </p>
+          <div className="login-system-enter mt-4 inline-flex items-center gap-2 rounded-full border border-blue-900/60 bg-blue-950/20 px-3 py-1 text-xs font-medium text-blue-200">
+            <span className="h-1.5 w-1.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.9)]" />
+            {t.login.systemLabel}
+          </div>
         </div>
 
         <div className="grid grid-cols-2 gap-4 mb-8">

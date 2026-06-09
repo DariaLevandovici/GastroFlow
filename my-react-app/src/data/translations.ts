@@ -201,8 +201,9 @@ export const translations = {
       profileUpdated: 'Profil actualizat cu succes!',
     },
     login: {
-      title: 'Bine ai revenit',
-      subtitle: 'Autentifica-te in contul tau',
+      title: 'Bine ai revenit la GastroFlow',
+      subtitle: 'Gestionează rezervările, comenzile, mesele și operațiunile bucătăriei dintr-o platformă unificată.',
+      systemLabel: 'Restaurant Management System',
       client: 'Client',
       staff: 'Staff',
       email: 'Email',
@@ -966,8 +967,9 @@ export const translations = {
       profileUpdated: 'Profile updated successfully!',
     },
     login: {
-      title: 'Welcome Back',
-      subtitle: 'Sign in to your account',
+      title: 'Welcome back to GastroFlow',
+      subtitle: 'Manage reservations, orders, tables and kitchen operations from one unified platform.',
+      systemLabel: 'Restaurant Management System',
       client: 'Client',
       staff: 'Staff',
       email: 'Email',
