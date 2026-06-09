@@ -18,6 +18,7 @@ public class DbSession : IDisposable
     private IRepository<Recipe>? _recipes;
     private IRepository<Ingredient>? _ingredients;
     private IRepository<Category>? _categories;
+    private IRepository<User>? _users;
 
     public DbSession(AppDbContext context)
     {
@@ -32,6 +33,7 @@ public class DbSession : IDisposable
     public IRepository<Recipe> Recipes => _recipes ??= new Repository<Recipe>(_context);
     public IRepository<Ingredient> Ingredients => _ingredients ??= new Repository<Ingredient>(_context);
     public IRepository<Category> Categories => _categories ??= new Repository<Category>(_context);
+    public IRepository<User> Users => _users ??= new Repository<User>(_context);
 
     public Task<int> SaveChangesAsync()
     {
