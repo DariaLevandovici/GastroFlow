@@ -11,6 +11,12 @@ public static class DatabaseSeeder
         // Always ensure ingredients have correct units and defaults
         await SeedIngredientsAsync(db);
 
+        // Always ensure image URLs are correct for the current environment
+        await FixImageUrlsAsync(db);
+        
+        // Repair products with missing images
+        await RepairProductsAsync(db);
+
         // Only seed if there are no products yet
         if (await db.Products.AnyAsync()) 
         {
@@ -24,66 +30,96 @@ public static class DatabaseSeeder
         var images = await db.Images.ToListAsync();
         var imageMap = images.ToDictionary(i => i.Filename, i => i.Id);
 
-        Guid GetImageId(string filename)
+        async Task<Guid> GetImageIdAsync(string filename)
         {
             if (imageMap.TryGetValue(filename, out var id)) return id;
+            
+            // Auto-register from filesystem if missing in DB but exists on disk
+            var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", filename);
+            if (File.Exists(wwwrootPath))
+            {
+                var newId = Guid.NewGuid();
+                var ext = Path.GetExtension(filename);
+                var uniqueName = $"{newId}{ext}";
+                var targetPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", uniqueName);
+                
+                File.Copy(wwwrootPath, targetPath, true);
+
+                var newImage = new Image
+                {
+                    Id = newId,
+                    Url = $"http://localhost:5224/images/{uniqueName}",
+                    Path = uniqueName,
+                    Filename = filename,
+                    MimeType = "image/webp",
+                    Size = (int)new FileInfo(wwwrootPath).Length,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                db.Images.Add(newImage);
+                await db.SaveChangesAsync();
+                
+                imageMap[filename] = newId;
+                return newId;
+            }
+
             throw new InvalidOperationException(
-                $"Image '{filename}' not found in the Images table. " +
-                "Please run the image migration endpoint first: POST /api/images/migrate-local");
+                $"Image '{filename}' not found in the Images table or wwwroot/images folder. " +
+                "Please ensure the image exists in backend/Restaurant.Api/wwwroot/images/");
         }
 
         var products = new List<Product>
         {
             // ── Breakfast ─────────────────────────────────────────────────
-            new() { Name = "Eggs Benedict",     Price = 95m,  Category = "Breakfast",   Dietary = "[\"egg\"]",                         ImageId = GetImageId("EggsBenedict.webp") },
-            new() { Name = "Avocado Toast",     Price = 75m,  Category = "Breakfast",   Dietary = "[\"vegetarian\"]",                  ImageId = GetImageId("AvocadoToast.webp") },
-            new() { Name = "Pancake Stack",     Price = 85m,  Category = "Breakfast",   Dietary = "[\"vegetarian\"]",                  ImageId = GetImageId("PancakeStack.webp") },
-            new() { Name = "English Breakfast", Price = 110m, Category = "Breakfast",   Dietary = "[]",                               ImageId = GetImageId("EnglishBreakfast.webp") },
-            new() { Name = "French Toast",      Price = 80m,  Category = "Breakfast",   Dietary = "[\"vegetarian\"]",                  ImageId = GetImageId("FrenchToast.webp") },
-            new() { Name = "Smoothie Bowl",     Price = 90m,  Category = "Breakfast",   Dietary = "[\"vegan\",\"gluten-free\"]",       ImageId = GetImageId("SmoothieBowl.webp") },
+            new() { Name = "Eggs Benedict",     Price = 95m,  Category = "Breakfast",   Dietary = "[\"egg\"]",                         ImageId = await GetImageIdAsync("EggsBenedict.webp") },
+            new() { Name = "Avocado Toast",     Price = 75m,  Category = "Breakfast",   Dietary = "[\"vegetarian\"]",                  ImageId = await GetImageIdAsync("AvocadoToast.webp") },
+            new() { Name = "Pancake Stack",     Price = 85m,  Category = "Breakfast",   Dietary = "[\"vegetarian\"]",                  ImageId = await GetImageIdAsync("PancakeStack.webp") },
+            new() { Name = "English Breakfast", Price = 110m, Category = "Breakfast",   Dietary = "[]",                               ImageId = await GetImageIdAsync("EnglishBreakfast.webp") },
+            new() { Name = "French Toast",      Price = 80m,  Category = "Breakfast",   Dietary = "[\"vegetarian\"]",                  ImageId = await GetImageIdAsync("FrenchToast.webp") },
+            new() { Name = "Smoothie Bowl",     Price = 90m,  Category = "Breakfast",   Dietary = "[\"vegan\",\"gluten-free\"]",       ImageId = await GetImageIdAsync("SmoothieBowl.webp") },
 
             // ── Starters ──────────────────────────────────────────────────
-            new() { Name = "Bruschetta Classica", Price = 85m,  Category = "Starters", Dietary = "[\"vegan\"]",                       ImageId = GetImageId("BruschettaClassica.webp") },
-            new() { Name = "Caesar Salad",        Price = 95m,  Category = "Starters", Dietary = "[]",                               ImageId = GetImageId("CaesarSalad.webp") },
-            new() { Name = "Hummus Platter",      Price = 70m,  Category = "Starters", Dietary = "[\"vegan\"]",                       ImageId = GetImageId("HummusPlatter.webp") },
-            new() { Name = "Calamari Fritti",     Price = 135m, Category = "Starters", Dietary = "[]",                               ImageId = GetImageId("CalamariFritti.webp") },
-            new() { Name = "Caprese Salad",       Price = 110m, Category = "Starters", Dietary = "[\"vegetarian\",\"gluten-free\"]",  ImageId = GetImageId("CapreseSalad.webp") },
-            new() { Name = "Beef Carpaccio",      Price = 165m, Category = "Starters", Dietary = "[\"gluten-free\"]",                 ImageId = GetImageId("BeefCarpaccio.webp") },
+            new() { Name = "Bruschetta Classica", Price = 85m,  Category = "Starters", Dietary = "[\"vegan\"]",                       ImageId = await GetImageIdAsync("BruschettaClassica.webp") },
+            new() { Name = "Caesar Salad",        Price = 95m,  Category = "Starters", Dietary = "[]",                               ImageId = await GetImageIdAsync("CaesarSalad.webp") },
+            new() { Name = "Hummus Platter",      Price = 70m,  Category = "Starters", Dietary = "[\"vegan\"]",                       ImageId = await GetImageIdAsync("HummusPlatter.webp") },
+            new() { Name = "Calamari Fritti",     Price = 135m, Category = "Starters", Dietary = "[]",                               ImageId = await GetImageIdAsync("CalamariFritti.webp") },
+            new() { Name = "Caprese Salad",       Price = 110m, Category = "Starters", Dietary = "[\"vegetarian\",\"gluten-free\"]",  ImageId = await GetImageIdAsync("CapreseSalad.webp") },
+            new() { Name = "Beef Carpaccio",      Price = 165m, Category = "Starters", Dietary = "[\"gluten-free\"]",                 ImageId = await GetImageIdAsync("BeefCarpaccio.webp") },
 
             // ── Vegan ─────────────────────────────────────────────────────
-            new() { Name = "Buddha Bowl",      Price = 125m, Category = "Vegan", Dietary = "[\"vegan\",\"gluten-free\"]",  ImageId = GetImageId("BuddhaBowl.webp") },
-            new() { Name = "Vegan Burger",     Price = 145m, Category = "Vegan", Dietary = "[\"vegan\"]",                 ImageId = GetImageId("VeganBurger.webp") },
-            new() { Name = "Mushroom Risotto", Price = 155m, Category = "Vegan", Dietary = "[\"vegan\",\"gluten-free\"]", ImageId = GetImageId("MushroomRisotto.webp") },
-            new() { Name = "Vegan Tacos",      Price = 120m, Category = "Vegan", Dietary = "[\"vegan\",\"gluten-free\"]", ImageId = GetImageId("VeganTacos.webp") },
-            new() { Name = "Zucchini Noodles", Price = 115m, Category = "Vegan", Dietary = "[\"vegan\",\"gluten-free\"]", ImageId = GetImageId("ZucchiniNoodles.webp") },
-            new() { Name = "Vegan Brownie",    Price = 70m,  Category = "Vegan", Dietary = "[\"vegan\",\"gluten-free\"]", ImageId = GetImageId("VeganBrownie.webp") },
+            new() { Name = "Buddha Bowl",      Price = 125m, Category = "Vegan", Dietary = "[\"vegan\",\"gluten-free\"]",  ImageId = await GetImageIdAsync("BuddhaBowl.webp") },
+            new() { Name = "Vegan Burger",     Price = 145m, Category = "Vegan", Dietary = "[\"vegan\"]",                 ImageId = await GetImageIdAsync("VeganBurger.webp") },
+            new() { Name = "Mushroom Risotto", Price = 155m, Category = "Vegan", Dietary = "[\"vegan\",\"gluten-free\"]", ImageId = await GetImageIdAsync("MushroomRisotto.webp") },
+            new() { Name = "Vegan Tacos",      Price = 120m, Category = "Vegan", Dietary = "[\"vegan\",\"gluten-free\"]", ImageId = await GetImageIdAsync("VeganTacos.webp") },
+            new() { Name = "Zucchini Noodles", Price = 115m, Category = "Vegan", Dietary = "[\"vegan\",\"gluten-free\"]", ImageId = await GetImageIdAsync("ZucchiniNoodles.webp") },
+            new() { Name = "Vegan Brownie",    Price = 70m,  Category = "Vegan", Dietary = "[\"vegan\",\"gluten-free\"]", ImageId = await GetImageIdAsync("VeganBrownie.webp") },
 
             // ── Main Dishes ───────────────────────────────────────────────
-            new() { Name = "Ribeye Steak",       Price = 385m, Category = "Main Dishes", Dietary = "[\"gluten-free\"]", ImageId = GetImageId("RibeyeSteak.webp") },
-            new() { Name = "Spaghetti Carbonara",Price = 165m, Category = "Main Dishes", Dietary = "[]",               ImageId = GetImageId("SpaghettiCarbonara.webp") },
-            new() { Name = "Grilled Salmon",     Price = 295m, Category = "Main Dishes", Dietary = "[\"gluten-free\"]", ImageId = GetImageId("GrilledSalmon.webp") },
-            new() { Name = "Lobster Linguine",   Price = 425m, Category = "Main Dishes", Dietary = "[]",               ImageId = GetImageId("LobsterLinguine.webp") },
-            new() { Name = "Chicken Parmesan",   Price = 185m, Category = "Main Dishes", Dietary = "[]",               ImageId = GetImageId("ChickenParmesan.webp") },
-            new() { Name = "Rack of Lamb",       Price = 450m, Category = "Main Dishes", Dietary = "[\"gluten-free\"]", ImageId = GetImageId("RackofLamb.webp") },
-            new() { Name = "Duck Breast",        Price = 360m, Category = "Main Dishes", Dietary = "[\"gluten-free\"]", ImageId = GetImageId("DuckBreast.webp") },
-            new() { Name = "Seafood Paella",     Price = 395m, Category = "Main Dishes", Dietary = "[]",               ImageId = GetImageId("SeafoodPaella.webp") },
+            new() { Name = "Ribeye Steak",       Price = 385m, Category = "Main Dishes", Dietary = "[\"gluten-free\"]", ImageId = await GetImageIdAsync("RibeyeSteak.webp") },
+            new() { Name = "Spaghetti Carbonara",Price = 165m, Category = "Main Dishes", Dietary = "[]",               ImageId = await GetImageIdAsync("SpaghettiCarbonara.webp") },
+            new() { Name = "Grilled Salmon",     Price = 295m, Category = "Main Dishes", Dietary = "[\"gluten-free\"]", ImageId = await GetImageIdAsync("GrilledSalmon.webp") },
+            new() { Name = "Lobster Linguine",   Price = 425m, Category = "Main Dishes", Dietary = "[]",               ImageId = await GetImageIdAsync("LobsterLinguine.webp") },
+            new() { Name = "Chicken Parmesan",   Price = 185m, Category = "Main Dishes", Dietary = "[]",               ImageId = await GetImageIdAsync("ChickenParmesan.webp") },
+            new() { Name = "Rack of Lamb",       Price = 450m, Category = "Main Dishes", Dietary = "[\"gluten-free\"]", ImageId = await GetImageIdAsync("RackofLamb.webp") },
+            new() { Name = "Duck Breast",        Price = 360m, Category = "Main Dishes", Dietary = "[\"gluten-free\"]", ImageId = await GetImageIdAsync("DuckBreast.webp") },
+            new() { Name = "Seafood Paella",     Price = 395m, Category = "Main Dishes", Dietary = "[]",               ImageId = await GetImageIdAsync("SeafoodPaella.webp") },
 
             // ── Desserts ──────────────────────────────────────────────────
-            new() { Name = "Tiramisu",          Price = 75m, Category = "Desserts", Dietary = "[\"vegetarian\"]",                  ImageId = GetImageId("Tiramisu.webp") },
-            new() { Name = "Chocolate Fondant", Price = 85m, Category = "Desserts", Dietary = "[\"vegetarian\"]",                  ImageId = GetImageId("ChocolateFondant.webp") },
-            new() { Name = "Cheesecake",        Price = 80m, Category = "Desserts", Dietary = "[\"vegetarian\"]",                  ImageId = GetImageId("Cheesecake.webp") },
-            new() { Name = "Panna Cotta",       Price = 85m, Category = "Desserts", Dietary = "[\"gluten-free\"]",                 ImageId = GetImageId("PannaCotta.webp") },
-            new() { Name = "Creme Brulee",      Price = 95m, Category = "Desserts", Dietary = "[\"vegetarian\",\"gluten-free\"]",  ImageId = GetImageId("CremeBrulee.webp") },
-            new() { Name = "Gelato Selection",  Price = 65m, Category = "Desserts", Dietary = "[\"vegetarian\",\"gluten-free\"]",  ImageId = GetImageId("GelatoSelection.webp") },
+            new() { Name = "Tiramisu",          Price = 75m, Category = "Desserts", Dietary = "[\"vegetarian\"]",                  ImageId = await GetImageIdAsync("Tiramisu.webp") },
+            new() { Name = "Chocolate Fondant", Price = 85m, Category = "Desserts", Dietary = "[\"vegetarian\"]",                  ImageId = await GetImageIdAsync("ChocolateFondant.webp") },
+            new() { Name = "Cheesecake",        Price = 80m, Category = "Desserts", Dietary = "[\"vegetarian\"]",                  ImageId = await GetImageIdAsync("Cheesecake.webp") },
+            new() { Name = "Panna Cotta",       Price = 85m, Category = "Desserts", Dietary = "[\"gluten-free\"]",                 ImageId = await GetImageIdAsync("PannaCotta.webp") },
+            new() { Name = "Creme Brulee",      Price = 95m, Category = "Desserts", Dietary = "[\"vegetarian\",\"gluten-free\"]",  ImageId = await GetImageIdAsync("CremeBrulee.webp") },
+            new() { Name = "Gelato Selection",  Price = 65m, Category = "Desserts", Dietary = "[\"vegetarian\",\"gluten-free\"]",  ImageId = await GetImageIdAsync("GelatoSelection.webp") },
 
             // ── Drinks ────────────────────────────────────────────────────
-            new() { Name = "Fresh Orange Juice", Price = 35m, Category = "Drinks", Dietary = "[\"vegan\",\"gluten-free\"]",      ImageId = GetImageId("FreshOrangeJuice.webp") },
-            new() { Name = "Espresso",           Price = 25m, Category = "Drinks", Dietary = "[\"vegan\",\"gluten-free\"]",      ImageId = GetImageId("Espresso.webp") },
-            new() { Name = "Craft Beer",         Price = 45m, Category = "Drinks", Dietary = "[]",                              ImageId = GetImageId("CraftBeer.webp") },
-            new() { Name = "House Wine",         Price = 55m, Category = "Drinks", Dietary = "[\"vegan\",\"gluten-free\"]",     ImageId = GetImageId("HouseWine.webp") },
-            new() { Name = "Iced Matcha Latte",  Price = 55m, Category = "Drinks", Dietary = "[\"vegetarian\",\"gluten-free\"]",ImageId = GetImageId("IcedMatchaLatte.webp") },
-            new() { Name = "Sparkling Water",    Price = 30m, Category = "Drinks", Dietary = "[\"vegan\",\"gluten-free\"]",     ImageId = GetImageId("SparklingWater.webp") },
-            new() { Name = "Mojito Mocktail",    Price = 45m, Category = "Drinks", Dietary = "[\"vegan\",\"gluten-free\"]",     ImageId = GetImageId("MojitoMocktail.webp") },
+            new() { Name = "Fresh Orange Juice", Price = 35m, Category = "Drinks", Dietary = "[\"vegan\",\"gluten-free\"]",      ImageId = await GetImageIdAsync("FreshOrangeJuice.webp") },
+            new() { Name = "Espresso",           Price = 25m, Category = "Drinks", Dietary = "[\"vegan\",\"gluten-free\"]",      ImageId = await GetImageIdAsync("Espresso.webp") },
+            new() { Name = "Craft Beer",         Price = 45m, Category = "Drinks", Dietary = "[]",                              ImageId = await GetImageIdAsync("CraftBeer.webp") },
+            new() { Name = "House Wine",         Price = 55m, Category = "Drinks", Dietary = "[\"vegan\",\"gluten-free\"]",     ImageId = await GetImageIdAsync("HouseWine.webp") },
+            new() { Name = "Iced Matcha Latte",  Price = 55m, Category = "Drinks", Dietary = "[\"vegetarian\",\"gluten-free\"]",ImageId = await GetImageIdAsync("IcedMatchaLatte.webp") },
+            new() { Name = "Sparkling Water",    Price = 30m, Category = "Drinks", Dietary = "[\"vegan\",\"gluten-free\"]",     ImageId = await GetImageIdAsync("SparklingWater.webp") },
+            new() { Name = "Mojito Mocktail",    Price = 45m, Category = "Drinks", Dietary = "[\"vegan\",\"gluten-free\"]",     ImageId = await GetImageIdAsync("MojitoMocktail.webp") },
         };
 
         // Set Description for each product
@@ -365,6 +401,132 @@ public static class DatabaseSeeder
         await db.SaveChangesAsync();
 
         System.Console.WriteLine($"[Seed] Inserted {links.Count} product-ingredient links successfully.");
+    }
+
+    private static async Task RepairProductsAsync(AppDbContext db)
+    {
+        var products = await db.Products.Include(p => p.MainImage).ToListAsync();
+        var images = await db.Images.ToListAsync();
+        var imageMap = images.ToDictionary(i => i.Filename, i => i.Id);
+        
+        // Mapping of product names to expected filenames (simplified)
+        var nameToFilename = new Dictionary<string, string>
+        {
+            ["Eggs Benedict"] = "EggsBenedict.webp",
+            ["Avocado Toast"] = "AvocadoToast.webp",
+            ["Pancake Stack"] = "PancakeStack.webp",
+            ["English Breakfast"] = "EnglishBreakfast.webp",
+            ["French Toast"] = "FrenchToast.webp",
+            ["Smoothie Bowl"] = "SmoothieBowl.webp",
+            ["Bruschetta Classica"] = "BruschettaClassica.webp",
+            ["Caesar Salad"] = "CaesarSalad.webp",
+            ["Hummus Platter"] = "HummusPlatter.webp",
+            ["Calamari Fritti"] = "CalamariFritti.webp",
+            ["Caprese Salad"] = "CapreseSalad.webp",
+            ["Beef Carpaccio"] = "BeefCarpaccio.webp",
+            ["Buddha Bowl"] = "BuddhaBowl.webp",
+            ["Vegan Burger"] = "VeganBurger.webp",
+            ["Mushroom Risotto"] = "MushroomRisotto.webp",
+            ["Vegan Tacos"] = "VeganTacos.webp",
+            ["Zucchini Noodles"] = "ZucchiniNoodles.webp",
+            ["Vegan Brownie"] = "VeganBrownie.webp",
+            ["Ribeye Steak"] = "RibeyeSteak.webp",
+            ["Spaghetti Carbonara"] = "SpaghettiCarbonara.webp",
+            ["Grilled Salmon"] = "GrilledSalmon.webp",
+            ["Lobster Linguine"] = "LobsterLinguine.webp",
+            ["Chicken Parmesan"] = "ChickenParmesan.webp",
+            ["Rack of Lamb"] = "RackofLamb.webp",
+            ["Duck Breast"] = "DuckBreast.webp",
+            ["Seafood Paella"] = "SeafoodPaella.webp",
+            ["Tiramisu"] = "Tiramisu.webp",
+            ["Chocolate Fondant"] = "ChocolateFondant.webp",
+            ["Cheesecake"] = "Cheesecake.webp",
+            ["Panna Cotta"] = "PannaCotta.webp",
+            ["Creme Brulee"] = "CremeBrulee.webp",
+            ["Gelato Selection"] = "GelatoSelection.webp",
+            ["Fresh Orange Juice"] = "FreshOrangeJuice.webp",
+            ["Espresso"] = "Espresso.webp",
+            ["Craft Beer"] = "CraftBeer.webp",
+            ["House Wine"] = "HouseWine.webp",
+            ["Iced Matcha Latte"] = "IcedMatchaLatte.webp",
+            ["Sparkling Water"] = "SparklingWater.webp",
+            ["Mojito Mocktail"] = "MojitoMocktail.webp"
+        };
+
+        bool changed = false;
+        foreach (var p in products)
+        {
+            bool fileExists = p.MainImage != null && File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", p.MainImage.Path));
+            
+            if (!fileExists && nameToFilename.TryGetValue(p.Name, out var filename))
+            {
+                // Try to get or create image ID
+                var imageId = await GetOrRegisterImageAsync(db, filename, imageMap);
+                if (imageId != Guid.Empty)
+                {
+                    p.ImageId = imageId;
+                    changed = true;
+                    System.Console.WriteLine($"[Seed] Fixed/Repaired image for product: {p.Name}");
+                }
+            }
+        }
+
+        if (changed) await db.SaveChangesAsync();
+    }
+
+    private static async Task<Guid> GetOrRegisterImageAsync(AppDbContext db, string filename, Dictionary<string, Guid> imageMap)
+    {
+        if (imageMap.TryGetValue(filename, out var id)) return id;
+
+        var wwwrootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", filename);
+        if (File.Exists(wwwrootPath))
+        {
+            var newId = Guid.NewGuid();
+            var ext = Path.GetExtension(filename);
+            var uniqueName = $"{newId}{ext}";
+            var targetPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", uniqueName);
+            
+            File.Copy(wwwrootPath, targetPath, true);
+
+            var newImage = new Image
+            {
+                Id = newId,
+                Url = $"http://localhost:5224/images/{uniqueName}",
+                Path = uniqueName,
+                Filename = filename,
+                MimeType = "image/webp",
+                Size = (int)new FileInfo(wwwrootPath).Length,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            db.Images.Add(newImage);
+            await db.SaveChangesAsync();
+            
+            imageMap[filename] = newId;
+            return newId;
+        }
+
+        return Guid.Empty;
+    }
+
+    private static async Task FixImageUrlsAsync(AppDbContext db)
+    {
+        var images = await db.Images.ToListAsync();
+        bool changed = false;
+        foreach (var img in images)
+        {
+            var expectedUrl = $"http://localhost:5224/images/{img.Path}";
+            if (img.Url != expectedUrl)
+            {
+                img.Url = expectedUrl;
+                changed = true;
+            }
+        }
+        if (changed) 
+        {
+            await db.SaveChangesAsync();
+            System.Console.WriteLine($"[Seed] Fixed {images.Count} image URLs.");
+        }
     }
 }
 
