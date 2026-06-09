@@ -120,8 +120,14 @@ namespace Restaurant.DataAccess.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("DeliveryAddress")
+                        .HasColumnType("text");
+
                     b.Property<bool>("IsPaid")
                         .HasColumnType("boolean");
+
+                    b.Property<int>("OrderType")
+                        .HasColumnType("integer");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");

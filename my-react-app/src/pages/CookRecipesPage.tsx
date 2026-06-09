@@ -4,6 +4,14 @@ import { useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { getMenuItems, type MenuItem } from '../services/menuService';
+import { useApp } from '../context/AppContext';
+import {
+  getTranslatedMenuSearchText,
+  translateCategory,
+  translateIngredient,
+  translateProductDescription,
+  translateProductName,
+} from '../data/translationHelpers';
 
 interface RecipeItem extends MenuItem {
   prepTime: string;
@@ -14,6 +22,7 @@ interface RecipeItem extends MenuItem {
 
 export function CookRecipesPage() {
   const navigate = useNavigate();
+  const { t } = useApp();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
   const [menuError, setMenuError] = useState<string | null>(null);
@@ -35,7 +44,7 @@ export function CookRecipesPage() {
         setMenuItems(items);
       } catch {
         if (!isMounted) return;
-        setMenuError('Unable to load recipes.');
+        setMenuError(t.kitchen.unableRecipes);
       } finally {
         if (isMounted) {
           setIsLoadingMenu(false);
@@ -47,7 +56,7 @@ export function CookRecipesPage() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t.kitchen.unableRecipes]);
 
   // Enhanced recipes with detailed preparation instructions
   const recipesWithInstructions = menuItems.map(item => ({
@@ -84,6 +93,13 @@ export function CookRecipesPage() {
       'Drinks': 'Easy'
     };
     return difficulty[category] || 'Medium';
+  }
+
+  function getDifficultyLabel(difficulty: string): string {
+    const normalized = difficulty.toLowerCase();
+    if (normalized === 'easy') return t.kitchen.easy;
+    if (normalized === 'hard') return t.kitchen.hard;
+    return t.kitchen.medium;
   }
 
   function getInstructions(name: string, category: string): string[] {
@@ -223,11 +239,7 @@ export function CookRecipesPage() {
   }
 
   const filteredRecipes = recipesWithInstructions.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(recipeSearchTerm.toLowerCase()) ||
-      // Only search ingredients if there are any (API items have empty array)
-      (item.ingredients.length > 0 && item.ingredients.some(ing =>
-        ing.toLowerCase().includes(recipeSearchTerm.toLowerCase())
-      ));
+    const matchesSearch = getTranslatedMenuSearchText(t, item).includes(recipeSearchTerm.toLowerCase());
     const matchesCategory = recipeCategory === 'All' || item.category === recipeCategory;
     return matchesSearch && matchesCategory;
   });
@@ -245,14 +257,14 @@ export function CookRecipesPage() {
             <ArrowLeft className="w-6 h-6 text-white" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-4xl font-bold text-white mb-2">Recipe Book</h1>
-            <p className="text-gray-400">Complete preparation instructions for all dishes</p>
+            <h1 className="text-4xl font-bold text-white mb-2">{t.kitchen.recipeBook}</h1>
+            <p className="text-gray-400">{t.kitchen.recipeBookSubtitle}</p>
           </div>
         </div>
 
         {isLoadingMenu ? (
           <div className="text-center py-16">
-            <p className="text-gray-400 text-lg">Loading recipes...</p>
+            <p className="text-gray-400 text-lg">{t.kitchen.loadingRecipes}</p>
           </div>
         ) : menuError ? (
           <div className="text-center py-16">
@@ -267,7 +279,7 @@ export function CookRecipesPage() {
               className="mb-6 text-blue-400 hover:text-blue-300 flex items-center gap-2 px-0"
             >
               <ArrowLeft className="w-4 h-4" />
-              Back to recipes
+              {t.kitchen.backToRecipes}
             </Button>
 
             <div className="bg-[#242424] rounded-2xl overflow-hidden border border-gray-800">
@@ -275,13 +287,13 @@ export function CookRecipesPage() {
               <div className="relative h-80">
                 <img
                   src={selectedRecipe.image}
-                  alt={selectedRecipe.name}
+                  alt={translateProductName(t, selectedRecipe.name)}
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] to-transparent"></div>
                 <div className="absolute bottom-6 left-6 right-6">
-                  <h2 className="text-4xl font-bold text-white mb-2">{selectedRecipe.name}</h2>
-                  <p className="text-gray-300">{selectedRecipe.description}</p>
+                  <h2 className="text-4xl font-bold text-white mb-2">{translateProductName(t, selectedRecipe.name)}</h2>
+                  <p className="text-gray-300">{translateProductDescription(t, selectedRecipe)}</p>
                 </div>
               </div>
 
@@ -291,30 +303,30 @@ export function CookRecipesPage() {
                   <div className="bg-gray-800 rounded-xl p-4 text-center">
                     <Clock className="w-6 h-6 text-blue-400 mx-auto mb-2" />
                     <p className="text-white font-bold">{selectedRecipe.prepTime}</p>
-                    <p className="text-gray-400 text-sm">Prep Time</p>
+                    <p className="text-gray-400 text-sm">{t.kitchen.prepTime}</p>
                   </div>
                   <div className="bg-gray-800 rounded-xl p-4 text-center">
                     <Users className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-                    <p className="text-white font-bold">{selectedRecipe.servings} servings</p>
-                    <p className="text-gray-400 text-sm">Portions</p>
+                    <p className="text-white font-bold">{selectedRecipe.servings}</p>
+                    <p className="text-gray-400 text-sm">{t.kitchen.portions}</p>
                   </div>
                   <div className="bg-gray-800 rounded-xl p-4 text-center">
                     <ChefHat className="w-6 h-6 text-blue-400 mx-auto mb-2" />
-                    <p className="text-white font-bold">{selectedRecipe.difficulty}</p>
-                    <p className="text-gray-400 text-sm">Difficulty</p>
+                    <p className="text-white font-bold">{getDifficultyLabel(selectedRecipe.difficulty)}</p>
+                    <p className="text-gray-400 text-sm">{t.kitchen.difficulty}</p>
                   </div>
                 </div>
 
                 {/* Ingredients */}
                 <div className="mb-8">
-                  <h3 className="text-2xl font-bold text-white mb-4">Ingredients & Quantities</h3>
+                  <h3 className="text-2xl font-bold text-white mb-4">{t.kitchen.ingredientsQuantities}</h3>
                   <div className="bg-gray-800 rounded-xl p-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {(selectedRecipe.detailedIngredients || []).map((ing, idx) => (
                         <div key={idx} className="flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700">
                           <div className="flex items-center gap-3">
                             <div className="w-2 h-2 bg-blue-500 rounded-full shadow-[0_0_8px_rgba(59,130,246,0.5)]"></div>
-                            <span className="text-gray-200 font-medium capitalize">{ing.name}</span>
+                            <span className="text-gray-200 font-medium capitalize">{translateIngredient(t, ing.name)}</span>
                           </div>
                           <span className="text-blue-400 font-bold bg-blue-900/20 px-3 py-1 rounded-md border border-blue-800/30">
                             {ing.amount} {ing.unit}
@@ -322,7 +334,7 @@ export function CookRecipesPage() {
                         </div>
                       ))}
                       {(selectedRecipe.detailedIngredients || []).length === 0 && (
-                        <p className="text-gray-500 italic">No ingredients specified for this recipe.</p>
+                        <p className="text-gray-500 italic">{t.kitchen.noRecipeIngredients}</p>
                       )}
                     </div>
                   </div>
@@ -331,7 +343,7 @@ export function CookRecipesPage() {
 
                 {/* Instructions */}
                 <div>
-                  <h3 className="text-2xl font-bold text-white mb-4">Preparation Instructions</h3>
+                  <h3 className="text-2xl font-bold text-white mb-4">{t.kitchen.preparationInstructions}</h3>
                   <div className="space-y-4">
                     {selectedRecipe.instructions.map((instruction: string, idx: number) => (
                       <div key={idx} className="flex gap-4 bg-gray-800 rounded-xl p-4">
@@ -354,7 +366,7 @@ export function CookRecipesPage() {
             <div className="mb-6 space-y-4">
               <Input
                 type="text"
-                placeholder="Search recipes or ingredients..."
+                placeholder={t.kitchen.searchRecipes}
                 value={recipeSearchTerm}
                 onChange={(e) => setRecipeSearchTerm(e.target.value)}
                 className="h-12 px-6"
@@ -370,7 +382,7 @@ export function CookRecipesPage() {
                       : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                       }`}
                   >
-                    {cat}
+                    {translateCategory(t, cat)}
                   </Button>
                 ))}
               </div>
@@ -380,7 +392,7 @@ export function CookRecipesPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredRecipes.length === 0 ? (
                 <div className="col-span-full text-center py-16">
-                  <p className="text-gray-400 text-lg">No recipes found</p>
+                  <p className="text-gray-400 text-lg">{t.kitchen.noRecipes}</p>
                 </div>
               ) : (
                 filteredRecipes.map(recipe => (
@@ -393,13 +405,13 @@ export function CookRecipesPage() {
                     <div className="aspect-video overflow-hidden">
                       <img
                         src={recipe.image}
-                        alt={recipe.name}
+                        alt={translateProductName(t, recipe.name)}
                         className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
                     <div className="p-4">
-                      <h3 className="text-lg font-bold text-white mb-2">{recipe.name}</h3>
-                      <p className="text-gray-400 text-sm mb-3 line-clamp-2">{recipe.description}</p>
+                      <h3 className="text-lg font-bold text-white mb-2">{translateProductName(t, recipe.name)}</h3>
+                      <p className="text-gray-400 text-sm mb-3 line-clamp-2">{translateProductDescription(t, recipe)}</p>
                       <div className="flex items-center gap-4 text-xs text-gray-500">
                         <span className="flex items-center gap-1">
                           <Clock className="w-3 h-3" />
@@ -407,7 +419,7 @@ export function CookRecipesPage() {
                         </span>
                         <span className="flex items-center gap-1">
                           <ChefHat className="w-3 h-3" />
-                          {recipe.difficulty}
+                          {getDifficultyLabel(recipe.difficulty)}
                         </span>
                       </div>
                     </div>

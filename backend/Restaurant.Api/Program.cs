@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Restaurant.Api.Middleware;
@@ -13,6 +14,10 @@ var builder = WebApplication.CreateBuilder(args);
 const string LocalFrontendCorsPolicy = "LocalFrontend";
 
 builder.Services.AddControllers();
+builder.Services.Configure<ApiBehaviorOptions>(options =>
+{
+	options.InvalidModelStateResponseFactory = _ => new BadRequestObjectResult(new { message = "Invalid data" });
+});
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddCors(options =>
@@ -20,7 +25,7 @@ builder.Services.AddCors(options =>
 	options.AddPolicy(LocalFrontendCorsPolicy, policy =>
 	{
 		policy
-			.WithOrigins("http://localhost:5173", "http://localhost:5174", "http://localhost:5224")
+			.SetIsOriginAllowed(IsLocalDevelopmentOrigin)
 			.AllowAnyHeader()
 			.AllowAnyMethod();
 	});
@@ -85,3 +90,14 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+static bool IsLocalDevelopmentOrigin(string origin)
+{
+	if (!Uri.TryCreate(origin, UriKind.Absolute, out var uri))
+	{
+		return false;
+	}
+
+	return (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps)
+		&& (uri.Host == "localhost" || uri.Host == "127.0.0.1" || uri.Host == "::1");
+}

@@ -19,26 +19,26 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginDto loginDto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid) return BadRequest(new { message = "Invalid data" });
 
         var result = await _authService.LoginAsync(loginDto);
         if (result == null)
         {
-            return Unauthorized(new { message = "Invalid email or password." });
+            return Unauthorized(new { message = "Email or password is incorrect." });
         }
 
         return Ok(result);
-         }
+    }
 
     [HttpPost("register")]
     public async Task<IActionResult> Register([FromBody] RegisterDto registerDto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (!ModelState.IsValid) return BadRequest(new { message = "Invalid data" });
 
         var result = await _authService.RegisterAsync(registerDto);
         if (result == null)
         {
-            return BadRequest(new { message = "Registration failed. Email might already be in use." });
+            return Conflict(new { message = "Email already exists." });
         }
 
         return Ok(result);

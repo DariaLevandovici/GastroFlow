@@ -19,7 +19,7 @@ public class TablesController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Waiter")]
+    [Authorize(Roles = "Admin,Waiter,Client")]
     public async Task<IActionResult> GetAll()
     {
         var tables = await _tableService.GetAllTablesAsync();
@@ -27,7 +27,7 @@ public class TablesController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Waiter")]
+    [Authorize(Roles = "Admin,Waiter,Client")]
     public async Task<IActionResult> GetById(int id)
     {
         var table = await _tableService.GetTableByIdAsync(id);

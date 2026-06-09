@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { translations } from '../data/translations';
+import type { Language, Translations } from '../data/translations';
 
 interface CartItem {
   id: number;
@@ -11,10 +13,11 @@ interface CartItem {
 
 interface Order {
   id: string;
+  apiId?: number;
   type: 'delivery' | 'takeaway' | 'dine-in';
   items: CartItem[];
   total: number;
-  status: 'draft' | 'confirmed' | 'in-preparation' | 'ready' | 'delivered';
+  status: 'draft' | 'confirmed' | 'sent-to-kitchen' | 'in-preparation' | 'preparing' | 'ready' | 'delivered' | 'closed';
   createdAt: string;
   address?: string;
   tableNumber?: number;
@@ -34,6 +37,11 @@ interface Reservation {
   phone: string;
   specialRequest?: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  tableId?: number;
+  tableNumber?: number;
+  tableCapacity?: number;
+  clientName?: string;
+  clientEmail?: string;
 }
 
 interface Table {
@@ -43,11 +51,13 @@ interface Table {
   status: 'free' | 'occupied' | 'reserved';
 }
 
+type UserRole = 'client' | 'waiter' | 'cook' | 'manager' | 'admin';
+
 interface User {
   id: string;
   name: string;
   email: string;
-  role: 'client' | 'waiter' | 'cook' | 'manager';
+  role: UserRole;
 }
 
 interface InventoryItem {
@@ -60,7 +70,11 @@ interface InventoryItem {
 
 interface AppContextType {
   user: User | null;
-  login: (email: string, password: string, role: 'client' | 'staff') => void;
+  language: Language;
+  setLanguage: (language: Language | ((current: Language) => Language)) => void;
+  t: Translations;
+  login: (email: string, password: string, role: 'client' | 'staff') => User;
+  setAuthenticatedUser: (data: { email: string; role: string; firstName?: string; lastName?: string }) => User;
   logout: () => void;
   cart: CartItem[];
   addToCart: (item: Omit<CartItem, 'quantity'>) => void;
@@ -73,7 +87,7 @@ interface AppContextType {
   finalizeOrder: (id: string) => void;
   cancelOrder: (id: string) => void;
   reservations: Reservation[];
-  addReservation: (reservation: Omit<Reservation, 'id' | 'status'>) => boolean;
+  addReservation: (reservation: Omit<Reservation, 'id' | 'status'> & Partial<Pick<Reservation, 'status'>>) => boolean;
   updateReservationStatus: (id: string, status: Reservation['status']) => void;
   tables: Table[];
   updateTableStatus: (id: number, status: Table['status']) => void;
@@ -90,6 +104,10 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  const [language, setLanguageState] = useState<Language>(() => {
+    const savedLanguage = localStorage.getItem('language');
+    return savedLanguage === 'EN' || savedLanguage === 'RO' ? savedLanguage : 'RO';
+  });
   const [user, setUser] = useState<User | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [orders, setOrders] = useState<Order[]>([
@@ -106,12 +124,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
   ]);
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [tables, setTables] = useState<Table[]>(
-    Array.from({ length: 12 }, (_, i) => ({
-      id: i + 1,
-      number: i + 1,
-      seats: i % 3 === 0 ? 4 : i % 3 === 1 ? 2 : 6,
-      status: i % 4 === 0 ? 'occupied' : 'free'
-    }))
+    [
+      { id: 1, number: 1, seats: 4, status: 'free' },
+      { id: 2, number: 2, seats: 2, status: 'free' },
+      { id: 3, number: 3, seats: 6, status: 'free' },
+      { id: 4, number: 4, seats: 4, status: 'occupied' },
+      { id: 5, number: 5, seats: 2, status: 'free' },
+      { id: 6, number: 6, seats: 6, status: 'free' },
+      { id: 7, number: 7, seats: 4, status: 'occupied' },
+      { id: 8, number: 8, seats: 2, status: 'free' },
+      { id: 9, number: 9, seats: 6, status: 'free' },
+      { id: 10, number: 10, seats: 4, status: 'free' },
+      { id: 11, number: 11, seats: 2, status: 'free' },
+      { id: 12, number: 12, seats: 6, status: 'free' },
+    ]
   );
   const [inventory, setInventory] = useState<InventoryItem[]>([
     { id: 'INV001', name: 'Tomatoes', quantity: 50, unit: 'kg', minStock: 20 },
@@ -123,6 +149,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [unavailableItems, setUnavailableItems] = useState<string[]>([]);
   const [unavailableIngredients, setUnavailableIngredients] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+
+  const setLanguage = (nextLanguage: Language | ((current: Language) => Language)) => {
+    setLanguageState((current) => {
+      const resolvedLanguage = typeof nextLanguage === 'function' ? nextLanguage(current) : nextLanguage;
+      localStorage.setItem('language', resolvedLanguage);
+      return resolvedLanguage;
+    });
+  };
 
   // Auto-update availability based on real stock + manual overrides
   useEffect(() => {
@@ -173,19 +207,54 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
 
   const login = (email: string, password: string, role: 'client' | 'staff') => {
+    const normalizedEmail = email.trim().toLowerCase();
+    void password;
 
     // Mock login - in production, this would call an API
     if (role === 'client') {
-      setUser({ id: '1', name: 'John Doe', email, role: 'client' });
-    } else {
-      // Determine staff role based on email
-      const staffRole = email.includes('waiter') ? 'waiter' : 
-                       email.includes('cook') ? 'cook' : 'manager';
-      setUser({ id: '2', name: 'Staff Member', email, role: staffRole });
+      const nextUser = { id: '1', name: 'John Doe', email, role: 'client' as const };
+      setUser(nextUser);
+      return nextUser;
     }
+
+    // Determine staff role based on email
+    const staffRole: UserRole = normalizedEmail === 'admin@gastroflow.md' ? 'admin' :
+      normalizedEmail.includes('waiter') ? 'waiter' :
+        normalizedEmail.includes('cook') || normalizedEmail.includes('bucatar') || normalizedEmail.includes('chef') ? 'cook' :
+          'manager';
+    const nextUser = {
+      id: staffRole === 'admin' ? 'admin' : '2',
+      name: staffRole === 'admin' ? 'Admin GastroFlow' : 'Staff Member',
+      email,
+      role: staffRole
+    };
+
+    setUser(nextUser);
+    return nextUser;
+  };
+
+  const setAuthenticatedUser = (data: { email: string; role: string; firstName?: string; lastName?: string }) => {
+    const normalizedRole = data.role.toLowerCase();
+    const mappedRole: UserRole =
+      normalizedRole === 'admin' ? 'admin' :
+        normalizedRole === 'waiter' ? 'waiter' :
+          normalizedRole === 'chef' || normalizedRole === 'cook' ? 'cook' :
+            normalizedRole === 'manager' ? 'manager' :
+              'client';
+    const name = [data.firstName, data.lastName].filter(Boolean).join(' ').trim();
+    const nextUser = {
+      id: mappedRole,
+      name: name || (mappedRole === 'admin' ? 'Admin GastroFlow' : data.email),
+      email: data.email,
+      role: mappedRole
+    };
+
+    setUser(nextUser);
+    return nextUser;
   };
 
   const logout = () => {
+    localStorage.removeItem('token');
     setUser(null);
   };
 
@@ -241,24 +310,29 @@ export function AppProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const addReservation = (reservation: Omit<Reservation, 'id' | 'status'>) => {
+  const addReservation = (reservation: Omit<Reservation, 'id' | 'status'> & Partial<Pick<Reservation, 'status'>>) => {
     const newReservation: Reservation = {
       ...reservation,
       id: `RES${String(reservations.length + 1).padStart(3, '0')}`,
-      status: 'pending'
+      status: reservation.status ?? 'pending'
     };
     setReservations(prev => [newReservation, ...prev]);
 
     let reservedTable = false;
     setTables(prev => {
-      const firstFreeTable = prev.find(table => table.status === 'free');
-      if (!firstFreeTable) {
+      const assignedTable = reservation.tableNumber
+        ? prev.find(table => table.number === reservation.tableNumber)
+        : prev.find(table => table.status === 'free');
+
+      if (!assignedTable) {
         return prev;
       }
 
       reservedTable = true;
       return prev.map(table =>
-        table.id === firstFreeTable.id ? { ...table, status: 'reserved' } : table
+        table.id === assignedTable.id && table.status !== 'occupied'
+          ? { ...table, status: 'reserved' }
+          : table
       );
     });
 
@@ -292,7 +366,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
   return (
     <AppContext.Provider value={{
       user,
+      language,
+      setLanguage,
+      t: translations[language],
       login,
+      setAuthenticatedUser,
       logout,
       cart,
       addToCart,

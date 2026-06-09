@@ -28,15 +28,16 @@ public class AuthService : IAuthService
 
     public async Task<TokenResponseDto?> LoginAsync(LoginDto loginDto)
     {
+        var email = loginDto.Email.Trim().ToLower();
         var user = await _dbSession.Context.Set<User>()
-            .FirstOrDefaultAsync(u => u.Email.ToLower() == loginDto.Email.ToLower());
+            .FirstOrDefaultAsync(u => u.Email.ToLower() == email);
 
         if (user == null)
         {
             return null;
         }
 
-        var isValidPassword = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.PasswordHash);
+        var isValidPassword = IsValidPassword(loginDto.Password, user.PasswordHash);
         if (!isValidPassword)
         {
             return null;
@@ -47,26 +48,22 @@ public class AuthService : IAuthService
 
     public async Task<TokenResponseDto?> RegisterAsync(RegisterDto registerDto)
     {
+        var email = registerDto.Email.Trim().ToLower();
         var alreadyExists = await _dbSession.Context.Set<User>()
-            .AnyAsync(u => u.Email.ToLower() == registerDto.Email.ToLower());
+            .AnyAsync(u => u.Email.ToLower() == email);
 
         if (alreadyExists)
         {
             return null;
         }
 
-        if (!Enum.TryParse<Role>(registerDto.Role, true, out var role))
-        {
-            role = Role.Client;
-        }
-
         var user = new User
         {
-            FirstName = registerDto.FirstName,
-            LastName = registerDto.LastName,
-            Email = registerDto.Email,
+            FirstName = registerDto.FirstName.Trim(),
+            LastName = registerDto.LastName.Trim(),
+            Email = email,
             PasswordHash = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
-            Role = role,
+            Role = Role.Client,
             CreatedAt = DateTime.UtcNow
         };
 
@@ -74,6 +71,23 @@ public class AuthService : IAuthService
         await _dbSession.SaveChangesAsync();
 
         return BuildTokenResponse(user);
+    }
+
+    private static bool IsValidPassword(string password, string storedPassword)
+    {
+        if (storedPassword.StartsWith("$2", StringComparison.Ordinal))
+        {
+            try
+            {
+                return BCrypt.Net.BCrypt.Verify(password, storedPassword);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        return storedPassword == password;
     }
 
     private TokenResponseDto BuildTokenResponse(User user)

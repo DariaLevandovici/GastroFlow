@@ -8,6 +8,11 @@ public static class DatabaseSeeder
 {
     public static async Task SeedAsync(AppDbContext db)
     {
+        await SeedAdminUserAsync(db);
+        await SeedDemoStaffUsersAsync(db);
+        await SeedDemoClientUserAsync(db);
+        await SeedCategoriesAsync(db);
+
         // Always ensure ingredients have correct units and defaults
         await SeedIngredientsAsync(db);
 
@@ -23,6 +28,8 @@ public static class DatabaseSeeder
             // Even if products exist, seed ingredients links if missing
             if (!await db.ProductIngredients.AnyAsync())
                 await SeedProductIngredientsAsync(db);
+
+            await SeedPresentationDataAsync(db);
             return;
         }
 
@@ -169,6 +176,124 @@ public static class DatabaseSeeder
         System.Console.WriteLine($"[Seed] Inserted {products.Count} products successfully.");
 
         await SeedProductIngredientsAsync(db);
+        await SeedPresentationDataAsync(db);
+    }
+
+    private static async Task SeedAdminUserAsync(AppDbContext db)
+    {
+        const string adminEmail = "admin@gastroflow.md";
+
+        var admin = await db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == adminEmail);
+        if (admin == null)
+        {
+            db.Users.Add(new User
+            {
+                FirstName = "Admin",
+                LastName = "GastroFlow",
+                Email = adminEmail,
+                PasswordHash = "123456",
+                Role = Role.Admin,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            admin.FirstName = string.IsNullOrWhiteSpace(admin.FirstName) ? "Admin" : admin.FirstName;
+            admin.LastName = string.IsNullOrWhiteSpace(admin.LastName) ? "GastroFlow" : admin.LastName;
+            admin.PasswordHash = "123456";
+            admin.Role = Role.Admin;
+        }
+
+        await db.SaveChangesAsync();
+        System.Console.WriteLine("[Seed] Ensured admin@gastroflow.md user.");
+    }
+
+    private static async Task SeedDemoStaffUsersAsync(AppDbContext db)
+    {
+        var staffUsers = new[]
+        {
+            new { Email = "waiter@gastroflow.md", FirstName = "Demo", LastName = "Waiter", Role = Role.Waiter },
+            new { Email = "cook@gastroflow.md", FirstName = "Demo", LastName = "Cook", Role = Role.Chef },
+            new { Email = "bucatar@gastroflow.md", FirstName = "Demo", LastName = "Bucatar", Role = Role.Chef }
+        };
+
+        foreach (var staff in staffUsers)
+        {
+            var email = staff.Email.ToLower();
+            var user = await db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email);
+
+            if (user == null)
+            {
+                db.Users.Add(new User
+                {
+                    FirstName = staff.FirstName,
+                    LastName = staff.LastName,
+                    Email = staff.Email,
+                    PasswordHash = "123456",
+                    Role = staff.Role,
+                    CreatedAt = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                user.FirstName = string.IsNullOrWhiteSpace(user.FirstName) ? staff.FirstName : user.FirstName;
+                user.LastName = string.IsNullOrWhiteSpace(user.LastName) ? staff.LastName : user.LastName;
+                user.PasswordHash = "123456";
+                user.Role = staff.Role;
+            }
+        }
+
+        await db.SaveChangesAsync();
+        System.Console.WriteLine("[Seed] Ensured demo staff users.");
+    }
+
+    private static async Task SeedDemoClientUserAsync(AppDbContext db)
+    {
+        const string clientEmail = "client@gastroflow.md";
+
+        var client = await db.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == clientEmail);
+        if (client == null)
+        {
+            db.Users.Add(new User
+            {
+                FirstName = "Demo",
+                LastName = "Client",
+                Email = clientEmail,
+                PasswordHash = "123456",
+                Role = Role.Client,
+                CreatedAt = DateTime.UtcNow
+            });
+        }
+        else
+        {
+            client.FirstName = string.IsNullOrWhiteSpace(client.FirstName) ? "Demo" : client.FirstName;
+            client.LastName = string.IsNullOrWhiteSpace(client.LastName) ? "Client" : client.LastName;
+            client.PasswordHash = "123456";
+            client.Role = Role.Client;
+        }
+
+        await db.SaveChangesAsync();
+        System.Console.WriteLine("[Seed] Ensured client@gastroflow.md user.");
+    }
+
+    private static async Task SeedCategoriesAsync(AppDbContext db)
+    {
+        if (await db.Categories.AnyAsync())
+        {
+            return;
+        }
+
+        db.Categories.AddRange(
+            new Category { Name = "Breakfast", Description = "Morning dishes and brunch favorites." },
+            new Category { Name = "Starters", Description = "Small plates and appetizers." },
+            new Category { Name = "Vegan", Description = "Plant-based dishes." },
+            new Category { Name = "Main Dishes", Description = "Signature plates and entrees." },
+            new Category { Name = "Desserts", Description = "Sweet dishes prepared in house." },
+            new Category { Name = "Drinks", Description = "Coffee, juices, mocktails, and beverages." }
+        );
+
+        await db.SaveChangesAsync();
+        System.Console.WriteLine("[Seed] Inserted demo categories.");
     }
 
     private static async Task SeedIngredientsAsync(AppDbContext db)
@@ -401,6 +526,577 @@ public static class DatabaseSeeder
         await db.SaveChangesAsync();
 
         System.Console.WriteLine($"[Seed] Inserted {links.Count} product-ingredient links successfully.");
+    }
+
+    private static async Task SeedPresentationDataAsync(AppDbContext db)
+    {
+        await SeedTablesAsync(db);
+        await SeedRecipesAsync(db);
+        await SeedOrdersAndOrderItemsAsync(db);
+        await SeedReservationsAsync(db);
+        await SeedAddressesAsync(db);
+    }
+
+    private static async Task SeedTablesAsync(AppDbContext db)
+    {
+        var existingTables = await db.Tables.ToListAsync();
+        var tableDefinitions = new[]
+        {
+            new { TableNumber = 1, Capacity = 4, IsOccupied = false },
+            new { TableNumber = 2, Capacity = 2, IsOccupied = false },
+            new { TableNumber = 3, Capacity = 6, IsOccupied = false },
+            new { TableNumber = 4, Capacity = 4, IsOccupied = true },
+            new { TableNumber = 5, Capacity = 2, IsOccupied = false },
+            new { TableNumber = 6, Capacity = 6, IsOccupied = false },
+            new { TableNumber = 7, Capacity = 4, IsOccupied = true },
+            new { TableNumber = 8, Capacity = 2, IsOccupied = false },
+            new { TableNumber = 9, Capacity = 6, IsOccupied = false },
+            new { TableNumber = 10, Capacity = 4, IsOccupied = false },
+            new { TableNumber = 11, Capacity = 2, IsOccupied = false },
+            new { TableNumber = 12, Capacity = 6, IsOccupied = false }
+        };
+
+        var changed = false;
+        var missingTables = new List<Table>();
+
+        foreach (var definition in tableDefinitions)
+        {
+            var existing = existingTables.FirstOrDefault(t => t.TableNumber == definition.TableNumber);
+            if (existing == null)
+            {
+                missingTables.Add(new Table
+                {
+                    TableNumber = definition.TableNumber,
+                    Capacity = definition.Capacity,
+                    IsOccupied = definition.IsOccupied
+                });
+                continue;
+            }
+
+            if (existing.Capacity != definition.Capacity)
+            {
+                existing.Capacity = definition.Capacity;
+                changed = true;
+            }
+        }
+
+        if (missingTables.Count > 0)
+        {
+            db.Tables.AddRange(missingTables);
+            changed = true;
+        }
+
+        if (changed)
+        {
+            await db.SaveChangesAsync();
+            System.Console.WriteLine("[Seed] Ensured 12 restaurant tables with realistic capacities.");
+        }
+    }
+
+    private static async Task SeedRecipesAsync(AppDbContext db)
+    {
+        var recipeData = new Dictionary<string, (string ingredients, string instructions, int minutes)>
+        {
+            ["Eggs Benedict"] = (
+                "Eggs, bacon, English muffin, butter, lemon, hollandaise sauce",
+                "1. Toast the English muffin and sear the bacon until crisp. 2. Poach the eggs until the whites are set and yolks remain soft. 3. Whisk warm hollandaise with butter and lemon, then assemble and serve immediately.",
+                18),
+            ["Avocado Toast"] = (
+                "Avocado, sourdough bread, tomatoes, feta, lemon, olive oil",
+                "1. Toast sourdough until golden. 2. Mash avocado with lemon, salt, and olive oil. 3. Top with tomatoes and feta, then finish with herbs.",
+                12),
+            ["Pancake Stack"] = (
+                "Flour, milk, eggs, berries, maple syrup, butter",
+                "1. Mix batter until just combined and rest briefly. 2. Cook pancakes on a buttered griddle until fluffy. 3. Stack with berries and maple syrup.",
+                20),
+            ["Bruschetta Classica"] = (
+                "Bread, tomatoes, garlic, basil, olive oil",
+                "1. Grill sliced bread and rub with garlic. 2. Dice tomatoes and mix with basil, olive oil, salt, and pepper. 3. Spoon topping over bread just before serving.",
+                10),
+            ["Caesar Salad"] = (
+                "Lettuce, parmesan, croutons, anchovies, egg, Caesar dressing",
+                "1. Wash and dry lettuce leaves thoroughly. 2. Blend dressing with egg, anchovies, parmesan, and lemon. 3. Toss with croutons and finish with parmesan.",
+                15),
+            ["Hummus Platter"] = (
+                "Chickpeas, tahini, lemon, garlic, pita, olives, vegetables",
+                "1. Blend chickpeas with tahini, lemon, garlic, and olive oil until smooth. 2. Warm pita and slice vegetables. 3. Plate hummus with toppings and serve.",
+                14),
+            ["Calamari Fritti"] = (
+                "Squid, flour, lemon, garlic, mayonnaise, oil",
+                "1. Slice squid and pat dry. 2. Coat lightly in seasoned flour and fry until crisp. 3. Serve with lemon wedges and garlic aioli.",
+                16),
+            ["Caprese Salad"] = (
+                "Mozzarella, tomatoes, basil, balsamic vinegar, olive oil",
+                "1. Slice tomatoes and mozzarella evenly. 2. Layer with basil leaves on a chilled plate. 3. Season and finish with olive oil and balsamic reduction.",
+                8),
+            ["Ribeye Steak"] = (
+                "Beef ribeye, butter, vegetables, garlic, herbs, truffle sauce",
+                "1. Season ribeye and sear on high heat for a crust. 2. Baste with butter, garlic, and herbs to desired doneness. 3. Rest, slice, and serve with vegetables and sauce.",
+                28),
+            ["Spaghetti Carbonara"] = (
+                "Pasta, guanciale, eggs, pecorino, black pepper",
+                "1. Render guanciale until crisp and boil pasta al dente. 2. Toss pasta with egg, pecorino, pepper, and pasta water off heat. 3. Fold in guanciale and serve creamy.",
+                22),
+            ["Grilled Salmon"] = (
+                "Salmon, asparagus, lemon, butter, dill",
+                "1. Season salmon and grill skin-side down. 2. Saute asparagus with butter and lemon. 3. Plate with dill butter and a lemon wedge.",
+                24),
+            ["Chicken Parmesan"] = (
+                "Chicken, tomato sauce, mozzarella, parmesan, pasta",
+                "1. Bread and pan-fry chicken until golden. 2. Top with tomato sauce and mozzarella, then bake until melted. 3. Serve with pasta and parmesan.",
+                30),
+            ["Tiramisu"] = (
+                "Mascarpone, coffee, ladyfingers, cocoa, eggs, sugar",
+                "1. Whip mascarpone cream with eggs and sugar. 2. Dip ladyfingers quickly in coffee and layer with cream. 3. Chill, dust with cocoa, and slice.",
+                35),
+            ["Chocolate Fondant"] = (
+                "Chocolate, butter, eggs, flour, vanilla ice cream",
+                "1. Melt chocolate with butter and fold into whipped eggs and flour. 2. Bake in molds until the edges set and center stays molten. 3. Serve warm with vanilla ice cream.",
+                18),
+            ["Fresh Orange Juice"] = (
+                "Fresh oranges, ice",
+                "1. Wash and halve oranges. 2. Press juice fresh to order. 3. Strain lightly and serve chilled over ice.",
+                6)
+        };
+
+        var products = await db.Products.ToListAsync();
+        var productMap = products.ToDictionary(p => p.Name, p => p, StringComparer.OrdinalIgnoreCase);
+        var recipes = await db.Recipes.Include(r => r.Product).ToListAsync();
+        var changed = false;
+
+        foreach (var (productName, data) in recipeData)
+        {
+            if (!productMap.TryGetValue(productName, out var product))
+            {
+                continue;
+            }
+
+            var existingRecipe = recipes.FirstOrDefault(r => r.ProductId == product.Id);
+            if (existingRecipe == null)
+            {
+                db.Recipes.Add(new Recipe
+                {
+                    ProductId = product.Id,
+                    IngredientsList = data.ingredients,
+                    Instructions = data.instructions,
+                    PreparationTimeMinutes = data.minutes
+                });
+                changed = true;
+                continue;
+            }
+
+            var isArtificial =
+                existingRecipe.IngredientsList.Contains("Prepared ingredients", StringComparison.OrdinalIgnoreCase) ||
+                existingRecipe.Instructions.Contains("Prepare mise en place", StringComparison.OrdinalIgnoreCase);
+
+            if (isArtificial)
+            {
+                existingRecipe.IngredientsList = data.ingredients;
+                existingRecipe.Instructions = data.instructions;
+                existingRecipe.PreparationTimeMinutes = data.minutes;
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await db.SaveChangesAsync();
+            System.Console.WriteLine("[Seed] Ensured realistic demo recipes.");
+        }
+    }
+
+    private static async Task SeedOrdersAndOrderItemsAsync(AppDbContext db)
+    {
+        var products = await db.Products.ToListAsync();
+
+        if (products.Count == 0)
+        {
+            return;
+        }
+
+        Product PickProduct(string preferredName, int fallbackIndex)
+        {
+            return products.FirstOrDefault(p => p.Name.Equals(preferredName, StringComparison.OrdinalIgnoreCase))
+                ?? products[Math.Min(fallbackIndex, products.Count - 1)];
+        }
+
+        var client = await db.Users.FirstOrDefaultAsync(u => u.Role == Role.Client);
+        var waiter = await db.Users.FirstOrDefaultAsync(u => u.Role == Role.Waiter);
+        var tables = await db.Tables.OrderBy(t => t.TableNumber).ToListAsync();
+
+        if (!await db.Orders.AnyAsync())
+        {
+            var orders = new List<Order>
+            {
+                new()
+                {
+                    CreatedAt = DateTime.UtcNow.AddDays(-2).AddHours(-1),
+                    Status = OrderStatus.Delivered,
+                    OrderType = OrderType.Delivery,
+                    ClientId = client?.Id,
+                    IsPaid = true
+                },
+                new()
+                {
+                    CreatedAt = DateTime.UtcNow.AddDays(-1).AddHours(-4),
+                    Status = OrderStatus.Delivered,
+                    OrderType = OrderType.Takeaway,
+                    ClientId = client?.Id,
+                    IsPaid = true
+                },
+                new()
+                {
+                    CreatedAt = DateTime.UtcNow.AddHours(-3),
+                    Status = OrderStatus.Preparing,
+                    OrderType = OrderType.DineIn,
+                    ClientId = client?.Id,
+                    WaiterId = waiter?.Id,
+                    TableId = tables.FirstOrDefault(t => t.TableNumber == 4)?.Id ?? tables.FirstOrDefault()?.Id,
+                    IsPaid = false
+                },
+                new()
+                {
+                    CreatedAt = DateTime.UtcNow.AddMinutes(-45),
+                    Status = OrderStatus.Pending,
+                    OrderType = OrderType.DineIn,
+                    ClientId = client?.Id,
+                    TableId = tables.FirstOrDefault(t => t.TableNumber == 7)?.Id,
+                    IsPaid = false
+                }
+            };
+
+            AddOrderItem(orders[0], PickProduct("Eggs Benedict", 0), 2);
+            AddOrderItem(orders[0], PickProduct("Fresh Orange Juice", 1), 2);
+            AddOrderItem(orders[1], PickProduct("Spaghetti Carbonara", 2), 1);
+            AddOrderItem(orders[1], PickProduct("Caesar Salad", 3), 1);
+            AddOrderItem(orders[2], PickProduct("Ribeye Steak", 4), 1);
+            AddOrderItem(orders[2], PickProduct("Chocolate Fondant", 5), 2);
+            AddOrderItem(orders[3], PickProduct("Grilled Salmon", 6), 1);
+            AddOrderItem(orders[3], PickProduct("Caprese Salad", 7), 1);
+
+            db.Orders.AddRange(orders);
+
+            foreach (var table in tables.Where(t => t.TableNumber == 4 || t.TableNumber == 7))
+            {
+                table.IsOccupied = true;
+            }
+
+            await db.SaveChangesAsync();
+            System.Console.WriteLine("[Seed] Inserted realistic demo orders with order items.");
+            return;
+        }
+
+        if (!await db.OrderItems.AnyAsync())
+        {
+            var ordersWithoutItems = await db.Orders
+                .Include(o => o.OrderItems)
+                .OrderBy(o => o.Id)
+                .Take(3)
+                .ToListAsync();
+
+            if (ordersWithoutItems.Count == 0)
+            {
+                return;
+            }
+
+            var demoProducts = new[]
+            {
+                PickProduct("Avocado Toast", 0),
+                PickProduct("Tiramisu", 1),
+                PickProduct("Chicken Parmesan", 2)
+            };
+
+            for (var i = 0; i < ordersWithoutItems.Count; i++)
+            {
+                var order = ordersWithoutItems[i];
+                var product = demoProducts[Math.Min(i, demoProducts.Length - 1)];
+                AddOrderItem(order, product, i == 0 ? 2 : 1);
+            }
+
+            await db.SaveChangesAsync();
+            System.Console.WriteLine("[Seed] Inserted realistic demo order items.");
+        }
+
+        await RecalculateOrderTotalsAsync(db);
+    }
+
+    private static void AddOrderItem(Order order, Product product, int quantity)
+    {
+        order.OrderItems.Add(new OrderItem
+        {
+            ProductId = product.Id,
+            Quantity = quantity,
+            UnitPrice = product.Price
+        });
+        order.TotalAmount += quantity * product.Price;
+    }
+
+    private static async Task SeedReservationsAsync(AppDbContext db)
+    {
+        if (await db.Reservations.AnyAsync())
+        {
+            await RepairReservationTableAssignmentsAsync(db);
+            return;
+        }
+
+        var client = await db.Users.FirstOrDefaultAsync(u => u.Role == Role.Client);
+        var tables = await db.Tables.OrderBy(t => t.TableNumber).ToListAsync();
+
+        if (client == null || tables.Count == 0)
+        {
+            return;
+        }
+
+        Table PickTable(int preferredNumber, int minCapacity)
+        {
+            return tables.FirstOrDefault(t => t.TableNumber == preferredNumber)
+                ?? tables.FirstOrDefault(t => t.Capacity >= minCapacity)
+                ?? tables[0];
+        }
+
+        db.Reservations.AddRange(
+            new Reservation
+            {
+                ClientId = client.Id,
+                TableId = PickTable(2, 2).Id,
+                ReservationDate = DateTime.UtcNow.Date.AddDays(1).AddHours(19),
+                NumberOfGuests = 2,
+                SpecialRequests = "Window table if available.",
+                Status = ReservationStatus.Confirmed,
+                CreatedAt = DateTime.UtcNow.AddDays(-1)
+            },
+            new Reservation
+            {
+                ClientId = client.Id,
+                TableId = PickTable(1, 4).Id,
+                ReservationDate = DateTime.UtcNow.Date.AddDays(3).AddHours(20),
+                NumberOfGuests = 4,
+                SpecialRequests = "Birthday dinner, please prepare a dessert candle.",
+                Status = ReservationStatus.Pending,
+                CreatedAt = DateTime.UtcNow
+            },
+            new Reservation
+            {
+                ClientId = client.Id,
+                TableId = PickTable(3, 6).Id,
+                ReservationDate = DateTime.UtcNow.Date.AddDays(5).AddHours(18).AddMinutes(30),
+                NumberOfGuests = 6,
+                SpecialRequests = "Quiet corner for a family dinner.",
+                Status = ReservationStatus.Confirmed,
+                CreatedAt = DateTime.UtcNow.AddHours(-6)
+            }
+        );
+
+        await db.SaveChangesAsync();
+        System.Console.WriteLine("[Seed] Inserted realistic demo reservations.");
+    }
+
+    private static async Task RepairReservationTableAssignmentsAsync(AppDbContext db)
+    {
+        var reservations = await db.Reservations
+            .Include(r => r.Table)
+            .Where(r => r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Confirmed)
+            .ToListAsync();
+
+        var changed = false;
+        foreach (var reservation in reservations)
+        {
+            if (reservation.Table != null && reservation.Table.Capacity >= reservation.NumberOfGuests)
+            {
+                continue;
+            }
+
+            var table = await FindAvailableTableForReservationAsync(
+                db,
+                reservation.ReservationDate,
+                reservation.NumberOfGuests,
+                reservation.Id);
+
+            if (table == null)
+            {
+                continue;
+            }
+
+            reservation.TableId = table.Id;
+            changed = true;
+        }
+
+        if (changed)
+        {
+            await db.SaveChangesAsync();
+            System.Console.WriteLine("[Seed] Repaired reservation table assignments.");
+        }
+    }
+
+    private static async Task<Table?> FindAvailableTableForReservationAsync(
+        AppDbContext db,
+        DateTime reservationDate,
+        int guests,
+        int? ignoredReservationId = null)
+    {
+        var reservationStart = reservationDate.Kind == DateTimeKind.Local
+            ? reservationDate.ToUniversalTime()
+            : DateTime.SpecifyKind(reservationDate, DateTimeKind.Utc);
+        var reservationEnd = reservationStart.AddHours(2);
+        var conflictStart = reservationStart.AddHours(-2);
+
+        var reservedTableIds = await db.Reservations
+            .Where(r =>
+                r.Id != ignoredReservationId &&
+                r.TableId.HasValue &&
+                (r.Status == ReservationStatus.Pending || r.Status == ReservationStatus.Confirmed) &&
+                r.ReservationDate > conflictStart &&
+                r.ReservationDate < reservationEnd)
+            .Select(r => r.TableId!.Value)
+            .ToListAsync();
+
+        return await db.Tables
+            .Where(t => t.Capacity >= guests && !reservedTableIds.Contains(t.Id))
+            .OrderBy(t => t.Capacity)
+            .ThenBy(t => t.TableNumber)
+            .FirstOrDefaultAsync();
+    }
+
+    private static async Task SeedAddressesAsync(AppDbContext db)
+    {
+        if (!await TableExistsAsync(db, "Addresses"))
+        {
+            System.Console.WriteLine("[Seed] Addresses table not found, skipping address seed.");
+            return;
+        }
+
+        var owner = await db.Users.FirstOrDefaultAsync(u => u.Role == Role.Admin)
+            ?? await db.Users.FirstOrDefaultAsync(u => u.Role == Role.Client);
+        if (owner == null)
+        {
+            return;
+        }
+
+        var branches = new[]
+        {
+            new Address
+            {
+                UserId = owner.Id,
+                Street = "GastroFlow Center, bd. Stefan cel Mare si Sfant 12",
+                City = "Chisinau",
+                PostalCode = "2001",
+                Country = "Moldova",
+                AdditionalInfo = "GastroFlow Center, Chisinau"
+            },
+            new Address
+            {
+                UserId = owner.Id,
+                Street = "GastroFlow Botanica, bd. Dacia 45",
+                City = "Chisinau",
+                PostalCode = "2060",
+                Country = "Moldova",
+                AdditionalInfo = "GastroFlow Botanica, Chisinau"
+            },
+            new Address
+            {
+                UserId = owner.Id,
+                Street = "GastroFlow Riscani, str. Alecu Russo 18",
+                City = "Chisinau",
+                PostalCode = "2068",
+                Country = "Moldova",
+                AdditionalInfo = "GastroFlow Riscani, Chisinau"
+            }
+        };
+
+        var existingAddresses = await db.Addresses.ToListAsync();
+        bool MatchesBranch(Address existing, Address branch)
+        {
+            return existing.Street.Equals(branch.Street, StringComparison.OrdinalIgnoreCase) ||
+                (existing.AdditionalInfo != null && existing.AdditionalInfo.Equals(branch.AdditionalInfo, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var oldDemoAddresses = existingAddresses
+            .Where(a =>
+                a.Street.Equals("Str. Stefan cel Mare 12", StringComparison.OrdinalIgnoreCase) ||
+                a.Street.Equals("Bd. Dacia 45", StringComparison.OrdinalIgnoreCase) ||
+                (a.AdditionalInfo != null && a.AdditionalInfo.Contains("Apartment 14", StringComparison.OrdinalIgnoreCase)) ||
+                (a.AdditionalInfo != null && a.AdditionalInfo.Contains("Office reception", StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+
+        var changed = false;
+        var usedBranches = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var existing in oldDemoAddresses)
+        {
+            var target = branches.FirstOrDefault(branch =>
+                !usedBranches.Contains(branch.AdditionalInfo ?? string.Empty) &&
+                !existingAddresses.Any(address => address.Id != existing.Id && MatchesBranch(address, branch)));
+
+            if (target == null)
+            {
+                continue;
+            }
+
+            existing.UserId = owner.Id;
+            existing.Street = target.Street;
+            existing.City = target.City;
+            existing.PostalCode = target.PostalCode;
+            existing.Country = target.Country;
+            existing.AdditionalInfo = target.AdditionalInfo;
+            usedBranches.Add(target.AdditionalInfo ?? string.Empty);
+            changed = true;
+        }
+
+        var missingBranches = branches
+            .Where(branch => !existingAddresses.Any(existing => MatchesBranch(existing, branch)))
+            .ToList();
+
+        if (missingBranches.Count > 0)
+        {
+            db.Addresses.AddRange(missingBranches);
+            changed = true;
+        }
+
+        if (changed)
+        {
+            await db.SaveChangesAsync();
+            System.Console.WriteLine("[Seed] Ensured realistic restaurant addresses.");
+        }
+    }
+
+    private static async Task RecalculateOrderTotalsAsync(AppDbContext db)
+    {
+        var orders = await db.Orders
+            .Include(o => o.OrderItems)
+            .ToListAsync();
+
+        var changed = false;
+        foreach (var order in orders)
+        {
+            if (order.TableId.HasValue && order.OrderType != OrderType.DineIn)
+            {
+                order.OrderType = OrderType.DineIn;
+                changed = true;
+            }
+
+            var expectedTotal = order.OrderItems.Sum(item => item.Quantity * item.UnitPrice);
+            if (expectedTotal > 0 && order.TotalAmount != expectedTotal)
+            {
+                order.TotalAmount = expectedTotal;
+                changed = true;
+            }
+        }
+
+        if (changed)
+        {
+            await db.SaveChangesAsync();
+            System.Console.WriteLine("[Seed] Recalculated order totals from order items.");
+        }
+    }
+
+    private static async Task<bool> TableExistsAsync(AppDbContext db, string tableName)
+    {
+        var count = await db.Database
+            .SqlQueryRaw<int>(
+                "SELECT COUNT(*) AS \"Value\" FROM information_schema.tables WHERE table_schema = 'public' AND table_name = {0}",
+                tableName)
+            .SingleAsync();
+
+        return count > 0;
     }
 
     private static async Task RepairProductsAsync(AppDbContext db)

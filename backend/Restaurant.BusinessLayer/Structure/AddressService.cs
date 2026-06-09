@@ -15,20 +15,48 @@ public class AddressService : IAddressService
         _context = context;
     }
 
+    private static AddressDto MapToDto(Address address)
+    {
+        return new AddressDto
+        {
+            Id = address.Id,
+            UserId = address.UserId,
+            UserName = address.User == null ? null : $"{address.User.FirstName} {address.User.LastName}".Trim(),
+            Street = address.Street,
+            City = address.City,
+            PostalCode = address.PostalCode,
+            Country = address.Country,
+            AdditionalInfo = address.AdditionalInfo
+        };
+    }
+
+    public async Task<IEnumerable<AddressDto>> GetAllAddressesAsync()
+    {
+        var addresses = await _context.Addresses
+            .Include(a => a.User)
+            .OrderBy(a => a.Id)
+            .ToListAsync();
+
+        return addresses.Select(MapToDto);
+    }
+
+    public async Task<AddressDto?> GetAddressByIdAsync(int id)
+    {
+        var address = await _context.Addresses
+            .Include(a => a.User)
+            .FirstOrDefaultAsync(a => a.Id == id);
+
+        return address == null ? null : MapToDto(address);
+    }
+
     public async Task<IEnumerable<AddressDto>> GetUserAddressesAsync(int userId)
     {
-        return await _context.Addresses
+        var addresses = await _context.Addresses
             .Where(a => a.UserId == userId)
-            .Select(a => new AddressDto
-            {
-                Id = a.Id,
-                Street = a.Street,
-                City = a.City,
-                PostalCode = a.PostalCode,
-                Country = a.Country,
-                AdditionalInfo = a.AdditionalInfo
-            })
+            .OrderBy(a => a.Id)
             .ToListAsync();
+
+        return addresses.Select(MapToDto);
     }
 
     public async Task<AddressDto> AddAddressAsync(int userId, CreateAddressDto dto)
@@ -49,6 +77,7 @@ public class AddressService : IAddressService
         return new AddressDto
         {
             Id = address.Id,
+            UserId = address.UserId,
             Street = address.Street,
             City = address.City,
             PostalCode = address.PostalCode,

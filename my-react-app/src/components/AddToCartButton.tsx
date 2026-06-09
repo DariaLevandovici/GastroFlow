@@ -13,7 +13,7 @@ interface AddToCartButtonProps {
 }
 
 export function AddToCartButton({ item, size = 'default' }: AddToCartButtonProps) {
-  const { cart, addToCart, updateCartQuantity } = useApp();
+  const { cart, addToCart, updateCartQuantity, t } = useApp();
   const isLarge = size === 'large';
 
   const cartItem = cart.find(i => i.id === item.id);
@@ -26,7 +26,7 @@ export function AddToCartButton({ item, size = 'default' }: AddToCartButtonProps
         className={isLarge ? 'h-14 w-full text-base' : 'h-12 w-full'}
       >
         <Plus className="w-4 h-4" />
-        Add to Cart
+        {t.cart.addToCart}
       </Button>
     );
   }
@@ -47,7 +47,7 @@ export function AddToCartButton({ item, size = 'default' }: AddToCartButtonProps
       <span className="font-bold flex-1 text-center select-none text-lg text-white">{quantity}</span>
 
       <Button
-        onClick={() => updateCartQuantity(item.id, quantity + 1)}
+        onClick={() => addToCart(item)}
         variant="ghost"
         size="icon"
         className={`${isLarge ? 'h-12 w-12' : 'h-10 w-10'} rounded-xl text-gray-300 hover:bg-gray-800 flex-shrink-0`}

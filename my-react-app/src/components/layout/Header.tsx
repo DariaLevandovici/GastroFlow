@@ -1,43 +1,19 @@
-import { useState } from 'react';
-import { Search, ShoppingCart, User, LogOut } from 'lucide-react';
+import { Search, Shield, ShoppingCart, User } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../../context/AppContext';
 import { Button } from '../../ui/button';
 import { Input } from '../../ui/input';
 
 export function Header() {
-  const [language, setLanguage] = useState<'RO' | 'EN'>('RO');
   const navigate = useNavigate();
-  const { cart, user, logout, searchQuery, setSearchQuery } = useApp();
-
-  const labels = language === 'RO'
-    ? {
-      reservation: 'Rezervare',
-      order: 'Comandă',
-      menu: 'Meniu',
-      career: 'Cariere',
-      login: 'Autentificare',
-      logout: 'Deconectare',
-    }
-    : {
-      reservation: 'Reservation',
-      order: 'Order',
-      menu: 'Menu',
-      career: 'Career',
-      login: 'Login',
-      logout: 'Logout',
-    };
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
+  const { cart, user, searchQuery, setSearchQuery, language, setLanguage, t } = useApp();
+  const cartItemCount = cart.reduce((total, item) => total + item.quantity, 0);
+  const labels = t.header;
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[#1a1a1a]/95 backdrop-blur-sm border-b border-gray-800">
       <div className="container mx-auto px-4 py-4 sm:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          {/* Logo */}
           <div className="flex min-w-0 items-center gap-3 sm:gap-8">
             <Button onClick={() => navigate('/')} variant="ghost" className="h-auto min-w-0 px-0 py-0 hover:bg-transparent">
               <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-800 rounded-lg flex items-center justify-center">
@@ -46,7 +22,6 @@ export function Header() {
               <h1 className="text-xl font-bold text-white sm:text-2xl">GastroFlow</h1>
             </Button>
 
-            {/* Cart */}
             <Button
               onClick={() => navigate('/cart')}
               variant="ghost"
@@ -54,15 +29,14 @@ export function Header() {
               className="relative rounded-xl"
             >
               <ShoppingCart className="w-6 h-6 text-gray-300" />
-              {cart.length > 0 && (
+              {cartItemCount > 0 && (
                 <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                  {cart.length}
+                  {cartItemCount}
                 </span>
               )}
             </Button>
           </div>
 
-          {/* Central Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             <Button variant="ghost" className="text-gray-300 hover:text-white px-2" onClick={() => navigate('/reservation')}>
               {labels.reservation}
@@ -76,11 +50,15 @@ export function Header() {
             <Button variant="ghost" className="text-gray-300 hover:text-white px-2" onClick={() => navigate('/career')}>
               {labels.career}
             </Button>
+            {user?.role === 'admin' && (
+              <Button variant="ghost" className="text-gray-300 hover:text-white px-2" onClick={() => navigate('/admin')}>
+                <Shield className="w-4 h-4" />
+                {labels.admin}
+              </Button>
+            )}
           </nav>
 
-          {/* Right Side */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* RO/EN Button */}
             <Button
               type="button"
               variant="outline"
@@ -90,19 +68,17 @@ export function Header() {
               {language}
             </Button>
 
-            {/* Search Bar */}
             <div className="hidden w-72 flex-shrink-0 items-center gap-2 md:flex">
               <Search className="w-4 h-4 text-gray-400 mr-2" />
               <Input
                 type="text"
-                placeholder="Search dishes..."
+                placeholder={labels.searchPlaceholder}
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(event) => setSearchQuery(event.target.value)}
                 className="h-10"
               />
             </div>
 
-            {/* User Menu or Login */}
             {user ? (
               <Button
                 onClick={() => navigate('/account')}
@@ -123,14 +99,13 @@ export function Header() {
             )}
           </div>
 
-          {/* Mobile Search */}
           <div className="flex w-full items-center gap-2 rounded-xl border border-gray-700 bg-[#242424] px-4 py-2 md:hidden">
             <Search className="h-4 w-4 flex-shrink-0 text-gray-400" />
             <Input
               type="text"
-              placeholder="Search dishes..."
+              placeholder={labels.searchPlaceholder}
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
               className="h-9 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
             />
           </div>

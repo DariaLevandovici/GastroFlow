@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Minus, Trash2, ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../context/AppContext';
@@ -6,6 +6,9 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { getMenuCategories, getMenuItems, type MenuItem } from '../services/menuService';
+import { createOrder, getOrders, type ApiOrder } from '../services/orderService';
+import { getTables, type ApiTable } from '../services/tableService';
+import { getTranslatedMenuSearchText, translateCategory, translateProductName } from '../data/translationHelpers';
 
 interface OrderItem {
   id: number;
@@ -14,9 +17,23 @@ interface OrderItem {
   quantity: number;
 }
 
+function normalizeOrderType(type: string) {
+  return type.trim().toLowerCase().replace(/[-_\s]/g, '');
+}
+
+function isOpenDineInOrder(order: ApiOrder) {
+  const status = order.status.trim().toLowerCase().replace(/[-_\s]/g, '');
+  return normalizeOrderType(order.orderType) === 'dinein'
+    && !order.isPaid
+    && status !== 'cancelled'
+    && status !== 'canceled'
+    && status !== 'closed'
+    && status !== 'paid';
+}
+
 export function WaiterCreateOrder() {
   const navigate = useNavigate();
-  const { tables, addOrder } = useApp();
+  const { tables, addOrder, updateTableStatus, user, t } = useApp();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>(['All']);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
@@ -27,6 +44,11 @@ export function WaiterCreateOrder() {
   const [searchTerm, setSearchTerm] = useState('');
   const [orderComment, setOrderComment] = useState('');
   const [showCommentModal, setShowCommentModal] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [apiTables, setApiTables] = useState<ApiTable[]>([]);
+  const [apiOrders, setApiOrders] = useState<ApiOrder[]>([]);
+  const [tablesError, setTablesError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -41,7 +63,7 @@ export function WaiterCreateOrder() {
         setCategories(['All', ...fetchedCategories]);
       } catch {
         if (!isMounted) return;
-        setMenuError('Unable to load menu items.');
+        setMenuError(t.waiter.unableToLoadMenu);
       } finally {
         if (isMounted) {
           setIsLoadingMenu(false);
@@ -53,7 +75,35 @@ export function WaiterCreateOrder() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t.waiter.unableToLoadMenu]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadTables() {
+      try {
+        const [tableRows, orderRows] = await Promise.all([
+          getTables(),
+          getOrders(),
+        ]);
+        if (!isMounted) return;
+        setApiTables(tableRows);
+        setApiOrders(orderRows);
+        setTablesError('');
+      } catch {
+        if (!isMounted) return;
+        setApiTables([]);
+        setApiOrders([]);
+        setTablesError(t.waiter.tableLoadFallback);
+      }
+    }
+
+    loadTables();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [t.waiter.tableLoadFallback]);
 
   const addItem = (item: MenuItem) => {
     const existing = orderItems.find(i => i.id === item.id);
@@ -82,35 +132,89 @@ export function WaiterCreateOrder() {
   };
 
   const total = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const tableOptions = useMemo(() => {
+    if (apiTables.length === 0) {
+      return tables.map((table) => ({
+        id: table.id,
+        tableNumber: table.number,
+        capacity: table.seats,
+        isOccupied: table.status === 'occupied',
+      }));
+    }
 
-  const handleSubmitOrder = () => {
+    const occupiedTableIds = new Set(
+      apiOrders
+        .filter(isOpenDineInOrder)
+        .map((order) => order.tableId)
+        .filter((id): id is number => typeof id === 'number')
+    );
+
+    return apiTables.map((table) => ({
+      ...table,
+      isOccupied: table.isOccupied || occupiedTableIds.has(table.id),
+    }));
+  }, [apiOrders, apiTables, tables]);
+
+  const freeTableOptions = tableOptions.filter((table) => !table.isOccupied);
+
+  const handleSubmitOrder = async () => {
     if (!selectedTable) {
-      alert('Please select a table');
+      setSubmitError(t.waiter.selectTableError);
       return;
     }
     if (orderItems.length === 0) {
-      alert('Please add items to the order');
+      setSubmitError(t.waiter.addItemsError);
       return;
     }
 
-    addOrder({
-      type: 'dine-in',
-      items: orderItems as any,
-      total,
-      status: 'draft',
-      tableNumber: selectedTable,
-      comment: orderComment.trim() || undefined,
-      origin: 'waiter'
-    });
+    const table = tableOptions.find((item) => item.tableNumber === selectedTable);
+    if (!table) {
+      setSubmitError(t.waiter.tableNotFoundError);
+      return;
+    }
+    if (table.isOccupied) {
+      setSubmitError(t.waiter.tableOccupiedError);
+      return;
+    }
 
-    alert(`Order created for Table ${selectedTable}`);
-    navigate('/dashboard/waiter');
+    setSubmitError('');
+    setIsSubmitting(true);
+
+    try {
+      const created = await createOrder({
+        orderType: 'DineIn',
+        tableId: table.id,
+        items: orderItems.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity
+        }))
+      }, user?.role);
+
+      addOrder({
+        apiId: created.id,
+        type: 'dine-in',
+        items: orderItems as any,
+        total: created.totalAmount || total,
+        status: 'draft',
+        tableNumber: created.tableNumber || selectedTable,
+        comment: orderComment.trim() || undefined,
+        origin: 'waiter'
+      });
+      updateTableStatus(table.id, 'occupied');
+
+      alert(`${t.waiter.orderCreatedForTable} ${created.tableNumber || selectedTable}`);
+      navigate('/dashboard/waiter');
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : t.waiter.createOrderError);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const filteredItems = menuItems.filter(item => {
-    // category='Menu' from API — items pass when 'All' is selected
+    // category='Menu' from API; items pass when 'All' is selected
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
-    const matchesSearch = item.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = getTranslatedMenuSearchText(t, item).includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -127,7 +231,7 @@ export function WaiterCreateOrder() {
           >
             <ArrowLeft className="w-6 h-6 text-white" />
           </Button>
-          <h1 className="text-4xl font-bold text-white">Create New Order</h1>
+          <h1 className="text-4xl font-bold text-white">{t.waiter.createOrderTitle}</h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -135,30 +239,41 @@ export function WaiterCreateOrder() {
           <div className="lg:col-span-2">
             {/* Table Selection */}
             <div className="mb-6 bg-[#242424] rounded-2xl p-6 border border-gray-800">
-              <h3 className="text-xl font-bold text-white mb-4">Select Table</h3>
+              <h3 className="text-xl font-bold text-white mb-4">{t.waiter.selectTable}</h3>
+              {tablesError && (
+                <div className="mb-4 rounded-xl border border-yellow-900/60 bg-yellow-950/30 px-4 py-3 text-sm text-yellow-200">
+                  {tablesError}
+                </div>
+              )}
               <div className="grid grid-cols-6 gap-3">
-                {tables.filter(t => t.status === 'free').map(table => (
+                {freeTableOptions.map(table => (
                   <Button
                     key={table.id}
-                    onClick={() => setSelectedTable(table.number)}
+                    onClick={() => setSelectedTable(table.tableNumber)}
                     variant="outline"
                     className={`h-auto p-4 border-2 transition-all ${
-                      selectedTable === table.number
+                      selectedTable === table.tableNumber
                         ? 'bg-blue-900/30 border-blue-600'
-                        : 'bg-gray-800 border-gray-700 hover:border-gray-600'
+                        : 'bg-green-900/20 border-green-700 hover:border-green-600'
                     }`}
                   >
-                    <p className="text-white font-bold text-center">{table.number}</p>
+                    <p className="text-white font-bold text-center">#{table.tableNumber}</p>
+                    <p className="text-gray-400 text-xs text-center mt-1">{table.capacity} {t.common.seats}</p>
                   </Button>
                 ))}
               </div>
+              {freeTableOptions.length === 0 && (
+                <p className="mt-4 rounded-xl border border-yellow-900/60 bg-yellow-950/30 px-4 py-3 text-sm text-yellow-200">
+                  {t.waiter.noFreeTables}
+                </p>
+              )}
             </div>
 
             {/* Search */}
             <div className="mb-6">
               <Input
                 type="text"
-                placeholder="Search menu items..."
+                placeholder={t.waiter.searchMenuItems}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="h-12 px-6"
@@ -178,7 +293,7 @@ export function WaiterCreateOrder() {
                       : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                   }`}
                 >
-                  {cat}
+                  {translateCategory(t, cat)}
                 </Button>
               ))}
             </div>
@@ -186,7 +301,7 @@ export function WaiterCreateOrder() {
             {/* Menu Items Grid */}
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {isLoadingMenu && (
-                <p className="col-span-full text-center text-gray-400 py-8">Loading menu...</p>
+                <p className="col-span-full text-center text-gray-400 py-8">{t.waiter.loadingMenu}</p>
               )}
               {menuError && !isLoadingMenu && (
                 <p className="col-span-full text-center text-red-400 py-8">{menuError}</p>
@@ -201,9 +316,9 @@ export function WaiterCreateOrder() {
                   className="h-auto bg-[#242424] p-4 border-gray-800 hover:border-blue-700 transition-all text-left flex-col items-start"
                 >
                   <div className="aspect-video mb-3 overflow-hidden rounded-lg">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.image} alt={translateProductName(t, item.name)} className="w-full h-full object-cover" />
                   </div>
-                  <h4 className="text-white font-bold mb-1 text-sm">{item.name}</h4>
+                  <h4 className="text-white font-bold mb-1 text-sm">{translateProductName(t, item.name)}</h4>
                   <p className="text-blue-400 font-bold">{item.price} MDL</p>
                 </Button>
               ))}
@@ -215,24 +330,24 @@ export function WaiterCreateOrder() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-[#242424] rounded-2xl p-6 border border-gray-800 sticky top-24">
-              <h3 className="text-2xl font-bold text-white mb-6">Order Summary</h3>
+              <h3 className="text-2xl font-bold text-white mb-6">{t.order.orderSummary}</h3>
 
               {selectedTable && (
                 <div className="mb-6 p-4 bg-blue-900/20 border border-blue-800 rounded-xl">
                   <p className="text-blue-400 text-center font-bold text-lg">
-                    Table {selectedTable}
+                    {t.common.table} {selectedTable}
                   </p>
                 </div>
               )}
 
               <div className="space-y-4 mb-6 max-h-96 overflow-y-auto">
                 {orderItems.length === 0 ? (
-                  <p className="text-gray-400 text-center py-8">No items added</p>
+                  <p className="text-gray-400 text-center py-8">{t.waiter.noItemsAdded}</p>
                 ) : (
                   orderItems.map(item => (
                     <div key={item.id} className="bg-gray-800 rounded-xl p-4">
                       <div className="flex justify-between items-start mb-3">
-                        <h4 className="text-white font-bold text-sm flex-1">{item.name}</h4>
+                        <h4 className="text-white font-bold text-sm flex-1">{translateProductName(t, item.name)}</h4>
                         <Button
                           onClick={() => removeItem(item.id)}
                           variant="ghost"
@@ -275,7 +390,7 @@ export function WaiterCreateOrder() {
 
               <div className="border-t border-gray-700 pt-4 mb-6">
                 <div className="flex justify-between text-2xl font-bold">
-                  <span className="text-white">Total</span>
+                  <span className="text-white">{t.common.total}</span>
                   <span className="text-blue-400">{total} MDL</span>
                 </div>
               </div>
@@ -285,7 +400,7 @@ export function WaiterCreateOrder() {
                 disabled={!selectedTable || orderItems.length === 0}
                 className="w-full h-12"
               >
-                Create Order
+                {t.waiter.createOrder}
               </Button>
             </div>
           </div>
@@ -295,11 +410,16 @@ export function WaiterCreateOrder() {
         {showCommentModal && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
             <div className="bg-[#242424] rounded-2xl p-8 border border-gray-800 max-w-md w-full">
-              <h3 className="text-2xl font-bold text-white mb-6">Add Special Instructions</h3>
+              <h3 className="text-2xl font-bold text-white mb-6">{t.waiter.addInstructions}</h3>
+              {submitError && (
+                <div className="mb-4 rounded-xl border border-red-900/60 bg-red-950/30 px-4 py-3 text-sm text-red-200">
+                  {submitError}
+                </div>
+              )}
               <Textarea
                 value={orderComment}
                 onChange={(e) => setOrderComment(e.target.value)}
-                placeholder="Enter any special instructions for the kitchen (optional)..."
+                placeholder={t.waiter.instructionsPlaceholder}
                 rows={4}
                 className="mb-6"
               />
@@ -307,15 +427,16 @@ export function WaiterCreateOrder() {
                 <Button
                   onClick={handleSubmitOrder}
                   className="flex-1"
+                  disabled={isSubmitting}
                 >
-                  Create Order
+                  {isSubmitting ? t.waiter.creating : t.waiter.createOrder}
                 </Button>
                 <Button
                   onClick={() => setShowCommentModal(false)}
                   variant="secondary"
                   className="flex-1"
                 >
-                  Cancel
+                  {t.common.cancel}
                 </Button>
               </div>
             </div>
