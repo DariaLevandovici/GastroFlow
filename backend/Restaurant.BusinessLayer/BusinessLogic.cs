@@ -7,18 +7,12 @@ using Restaurant.BusinessLayer.Services;
 using Supabase;
 using System;
 
-using Restaurant.BusinessLayer.Mappings;
-using AutoMapper;
-
 namespace Restaurant.BusinessLayer;
 
 public static class BusinessLogic
 {
     public static IServiceCollection AddBusinessLayer(this IServiceCollection services)
     {
-        // AutoMapper
-        services.AddAutoMapper(typeof(OrderProfile).Assembly);
-
         // Data Access Layer
         services.AddScoped<DbSession>();
 

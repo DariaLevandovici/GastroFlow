@@ -3,9 +3,10 @@ import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router';
 import { Button } from '../ui/button';
+import { translateProductName } from '../data/translationHelpers';
 
 export function CartPage() {
-  const { cart, updateCartQuantity, removeFromCart, clearCart } = useApp();
+  const { cart, addToCart, updateCartQuantity, removeFromCart, clearCart, t } = useApp();
   const navigate = useNavigate();
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'cash'>('card');
 
@@ -24,13 +25,13 @@ export function CartPage() {
         <div className="container mx-auto px-6">
           <div className="text-center py-16">
             <ShoppingBag className="w-24 h-24 text-gray-700 mx-auto mb-6" />
-            <h2 className="text-3xl font-bold text-white mb-4">Your cart is empty</h2>
-            <p className="text-gray-400 mb-8">Add some delicious items to get started!</p>
+            <h2 className="text-3xl font-bold text-white mb-4">{t.cart.emptyTitle}</h2>
+            <p className="text-gray-400 mb-8">{t.cart.emptySubtitle}</p>
             <Button
               onClick={() => navigate('/menu')}
               className="px-8"
             >
-              Browse Menu
+              {t.cart.browseMenu}
             </Button>
           </div>
         </div>
@@ -41,7 +42,7 @@ export function CartPage() {
   return (
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
       <div className="container mx-auto px-6">
-        <h1 className="text-4xl font-bold text-white mb-8">Shopping Cart</h1>
+        <h1 className="text-4xl font-bold text-white mb-8">{t.cart.title}</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Cart Items */}
@@ -53,13 +54,13 @@ export function CartPage() {
               >
                 <img
                   src={item.image}
-                  alt={item.name}
+                  alt={translateProductName(t, item.name)}
                   className="w-32 h-32 object-cover rounded-lg"
                 />
                 <div className="flex-1">
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <h3 className="text-xl font-bold text-white mb-2">{item.name}</h3>
+                      <h3 className="text-xl font-bold text-white mb-2">{translateProductName(t, item.name)}</h3>
                       <p className="text-blue-400 font-bold">{item.price} MDL</p>
                     </div>
                     <Button
@@ -84,7 +85,7 @@ export function CartPage() {
                       </Button>
                       <span className="text-white font-bold w-8 text-center">{item.quantity}</span>
                       <Button
-                        onClick={() => updateCartQuantity(item.id, item.quantity + 1)}
+                        onClick={() => addToCart(item)}
                         variant="ghost"
                         size="icon"
                         className="text-gray-400 hover:text-white h-7 w-7"
@@ -93,7 +94,7 @@ export function CartPage() {
                       </Button>
                     </div>
                     <span className="text-gray-400">
-                      Subtotal: <span className="text-white font-bold">{item.price * item.quantity} MDL</span>
+                      {t.cart.subtotalLabel} <span className="text-white font-bold">{item.price * item.quantity} MDL</span>
                     </span>
                   </div>
                 </div>
@@ -105,34 +106,34 @@ export function CartPage() {
               variant="destructive"
               className="w-full bg-red-900/30 hover:bg-red-900/50 text-red-400"
             >
-              Clear Cart
+              {t.cart.clearCart}
             </Button>
           </div>
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-[#242424] rounded-2xl p-6 border border-gray-800 sticky top-24">
-              <h2 className="text-2xl font-bold text-white mb-6">Order Summary</h2>
+              <h2 className="text-2xl font-bold text-white mb-6">{t.cart.orderSummary}</h2>
 
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between text-gray-400">
-                  <span>Subtotal</span>
+                  <span>{t.cart.subtotal}</span>
                   <span className="text-white">{subtotal.toFixed(2)} MDL</span>
                 </div>
                 <div className="flex justify-between text-gray-400">
-                  <span>Tax (10%)</span>
+                  <span>{t.cart.tax}</span>
                   <span className="text-white">{tax.toFixed(2)} MDL</span>
                 </div>
                 <div className="h-px bg-gray-700" />
                 <div className="flex justify-between text-xl font-bold">
-                  <span className="text-white">Total</span>
+                  <span className="text-white">{t.cart.total}</span>
                   <span className="text-blue-400">{total.toFixed(2)} MDL</span>
                 </div>
               </div>
 
               {/* Payment Method */}
               <div className="mb-6">
-                <label className="text-sm text-gray-400 mb-3 block">Payment Method</label>
+                <label className="text-sm text-gray-400 mb-3 block">{t.cart.paymentMethod}</label>
                 <div className="space-y-2">
                   <label className="flex items-center gap-3 bg-gray-800 p-4 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
                     <input
@@ -143,7 +144,7 @@ export function CartPage() {
                       onChange={(e) => setPaymentMethod(e.target.value as 'card')}
                       className="w-4 h-4 text-blue-600"
                     />
-                    <span className="text-white">Credit/Debit Card</span>
+                    <span className="text-white">{t.cart.card}</span>
                   </label>
                   <label className="flex items-center gap-3 bg-gray-800 p-4 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
                     <input
@@ -154,7 +155,7 @@ export function CartPage() {
                       onChange={(e) => setPaymentMethod(e.target.value as 'cash')}
                       className="w-4 h-4 text-blue-600"
                     />
-                    <span className="text-white">Cash on Delivery</span>
+                    <span className="text-white">{t.cart.cash}</span>
                   </label>
                 </div>
               </div>
@@ -163,7 +164,7 @@ export function CartPage() {
                 onClick={handleCheckout}
                 className="w-full h-12"
               >
-                Proceed to Checkout
+                {t.cart.checkout}
               </Button>
 
               <Button
@@ -171,7 +172,7 @@ export function CartPage() {
                 variant="secondary"
                 className="w-full mt-3"
               >
-                Continue Shopping
+                {t.cart.continueShopping}
               </Button>
             </div>
           </div>

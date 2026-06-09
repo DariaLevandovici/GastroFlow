@@ -3,8 +3,10 @@ import { Mail, MessageSquare, User } from 'lucide-react';
 import { Input } from '../ui/input';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
+import { useApp } from '../context/AppContext';
 
 export function FeedbackPage() {
+  const { t } = useApp();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -22,9 +24,9 @@ export function FeedbackPage() {
     e.preventDefault();
 
     const nextErrors = {
-      name: formData.name.trim() ? '' : 'Name is required.',
-      email: formData.email.trim() ? '' : 'Email is required.',
-      message: formData.message.trim() ? '' : 'Message is required.'
+      name: formData.name.trim() ? '' : t.feedback.errors.name,
+      email: formData.email.trim() ? '' : t.feedback.errors.email,
+      message: formData.message.trim() ? '' : t.feedback.errors.message
     };
 
     setErrors(nextErrors);
@@ -51,16 +53,16 @@ export function FeedbackPage() {
       });
 
       if (response.ok) {
-        setSuccessMessage('Thank you for your feedback!');
+        setSuccessMessage(t.feedback.successMessage);
         setFormData({ name: '', email: '', message: '' });
         setErrors({ name: '', email: '', message: '' });
       } else {
-        setSuccessMessage('Thank you for your feedback!');
+        setSuccessMessage(t.feedback.successMessage);
         setFormData({ name: '', email: '', message: '' });
         setErrors({ name: '', email: '', message: '' });
       }
     } catch {
-      setSuccessMessage('Thank you for your feedback!');
+      setSuccessMessage(t.feedback.successMessage);
       setFormData({ name: '', email: '', message: '' });
       setErrors({ name: '', email: '', message: '' });
     } finally {
@@ -72,8 +74,8 @@ export function FeedbackPage() {
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
       <div className="container mx-auto px-6 max-w-3xl">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">Feedback</h1>
-          <p className="text-gray-400 text-lg">Share your thoughts with us</p>
+          <h1 className="text-4xl font-bold text-white mb-4">{t.feedback.title}</h1>
+          <p className="text-gray-400 text-lg">{t.feedback.subtitle}</p>
         </div>
 
         <div className="bg-[#242424] rounded-2xl p-8 border border-gray-800">
@@ -87,11 +89,11 @@ export function FeedbackPage() {
             <div>
               <label className="flex items-center gap-2 text-white mb-3">
                 <User className="w-5 h-5 text-blue-400" />
-                <span>Name</span>
+                <span>{t.feedback.name}</span>
               </label>
               <Input
                 type="text"
-                placeholder="Your name"
+                placeholder={t.feedback.namePlaceholder}
                 value={formData.name}
                 onChange={(e) => {
                   setFormData({ ...formData, name: e.target.value });
@@ -105,7 +107,7 @@ export function FeedbackPage() {
             <div>
               <label className="flex items-center gap-2 text-white mb-3">
                 <Mail className="w-5 h-5 text-blue-400" />
-                <span>Email</span>
+                <span>{t.feedback.email}</span>
               </label>
               <Input
                 type="email"
@@ -123,11 +125,11 @@ export function FeedbackPage() {
             <div>
               <label className="flex items-center gap-2 text-white mb-3">
                 <MessageSquare className="w-5 h-5 text-blue-400" />
-                <span>Message</span>
+                <span>{t.feedback.message}</span>
               </label>
               <Textarea
                 rows={6}
-                placeholder="Write your feedback here..."
+                placeholder={t.feedback.messagePlaceholder}
                 value={formData.message}
                 onChange={(e) => {
                   setFormData({ ...formData, message: e.target.value });
@@ -139,7 +141,7 @@ export function FeedbackPage() {
             </div>
 
             <Button type="submit" className="w-full h-12" disabled={isLoading}>
-              {isLoading ? 'Sending...' : 'Submit'}
+              {isLoading ? t.feedback.sending : t.feedback.submit}
             </Button>
           </form>
         </div>

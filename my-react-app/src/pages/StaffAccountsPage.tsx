@@ -4,9 +4,11 @@ import { useNavigate } from 'react-router';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
+import { useApp } from '../context/AppContext';
 
 export function StaffAccountsPage() {
   const navigate = useNavigate();
+  const { t } = useApp();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -32,12 +34,12 @@ export function StaffAccountsPage() {
           className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span className="text-sm">Back</span>
+          <span className="text-sm">{t.manager.back}</span>
         </button>
 
         <div className="mb-8 text-center">
-          <h1 className="mb-4 text-4xl font-bold text-white">Staff Accounts</h1>
-          <p className="text-gray-400">Create internal accounts for restaurant staff members.</p>
+          <h1 className="mb-4 text-4xl font-bold text-white">{t.manager.staffAccountsTitle}</h1>
+          <p className="text-gray-400">{t.manager.staffAccountsDescription}</p>
         </div>
 
         <div className="rounded-2xl border border-gray-800 bg-[#242424] p-8">
@@ -45,11 +47,11 @@ export function StaffAccountsPage() {
             <div>
               <label className="mb-3 flex items-center gap-2 text-white">
                 <User className="h-5 w-5 text-blue-400" />
-                <span>Name</span>
+                <span>{t.common.name}</span>
               </label>
               <Input
                 type="text"
-                placeholder="Staff full name"
+                placeholder={t.manager.staffNamePlaceholder}
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
@@ -58,7 +60,7 @@ export function StaffAccountsPage() {
             <div>
               <label className="mb-3 flex items-center gap-2 text-white">
                 <Mail className="h-5 w-5 text-blue-400" />
-                <span>Email</span>
+                <span>{t.common.email}</span>
               </label>
               <Input
                 type="email"
@@ -71,7 +73,7 @@ export function StaffAccountsPage() {
             <div>
               <label className="mb-3 flex items-center gap-2 text-white">
                 <ShieldCheck className="h-5 w-5 text-blue-400" />
-                <span>Role</span>
+                <span>{t.manager.role}</span>
               </label>
               <Select
                 value={formData.role}
@@ -91,11 +93,11 @@ export function StaffAccountsPage() {
             <div>
               <label className="mb-3 flex items-center gap-2 text-white">
                 <Lock className="h-5 w-5 text-blue-400" />
-                <span>Password</span>
+                <span>{t.common.password}</span>
               </label>
               <Input
                 type="password"
-                placeholder="Create a password"
+                placeholder={t.manager.passwordPlaceholder}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
               />
@@ -104,7 +106,7 @@ export function StaffAccountsPage() {
             {/* Butoane */}
             <div className="flex gap-3 pt-2">
               <Button type="submit" className="flex-1 h-12">
-                Create Staff Account
+                {t.manager.createStaffAccount}
               </Button>
               <Button
                 type="button"
@@ -112,7 +114,7 @@ export function StaffAccountsPage() {
                 className="h-12 px-6 border-red-800 text-red-400 hover:bg-red-900/20"
                 onClick={handleCancel}
               >
-                Cancel
+                {t.common.cancel}
               </Button>
             </div>
           </form>

@@ -4,9 +4,10 @@ import { ProductCard } from './ProductCard';
 
 import { useApp } from '../../../context/AppContext';
 import { getMenuCategories, getMenuItems, type MenuItem } from '../../../services/menuService';
+import { getTranslatedMenuSearchText, translateCategory } from '../../../data/translationHelpers';
 
 export function MenuSection() {
-  const { searchQuery } = useApp();
+  const { searchQuery, t } = useApp();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [isLoadingMenu, setIsLoadingMenu] = useState(true);
@@ -25,7 +26,7 @@ export function MenuSection() {
         setCategories(fetchedCategories);
       } catch {
         if (!isMounted) return;
-        setMenuError('Unable to load menu section.');
+        setMenuError(t.menu.loadError);
       } finally {
         if (isMounted) {
           setIsLoadingMenu(false);
@@ -37,13 +38,13 @@ export function MenuSection() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [t.menu.loadError]);
 
   if (isLoadingMenu) {
     return (
       <section id="menu" className="py-16 bg-[#1a1a1a]">
         <div className="container mx-auto px-6 text-center">
-          <p className="text-gray-400 text-lg">Loading menu...</p>
+          <p className="text-gray-400 text-lg">{t.home.loadingMenu}</p>
         </div>
       </section>
     );
@@ -61,22 +62,19 @@ export function MenuSection() {
 
   if (searchQuery) {
     const query = searchQuery.toLowerCase();
-    const filteredItems = menuItems.filter((item) => 
-      item.name.toLowerCase().includes(query) || 
-      (item.description && item.description.toLowerCase().includes(query))
-    );
+    const filteredItems = menuItems.filter((item) => getTranslatedMenuSearchText(t, item).includes(query));
 
     return (
       <section id="menu" className="py-16 bg-[#1a1a1a]">
         <div className="container mx-auto px-6">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-white mb-4">Search Results</h2>
-            <p className="text-gray-400 text-lg">Showing results for "{searchQuery}"</p>
+            <h2 className="text-4xl font-bold text-white mb-4">{t.home.searchResultsTitle}</h2>
+            <p className="text-gray-400 text-lg">{t.home.searchResultsFor} "{searchQuery}"</p>
           </div>
 
           {filteredItems.length === 0 ? (
             <div className="text-center py-16">
-              <p className="text-gray-400 text-lg">No results found</p>
+              <p className="text-gray-400 text-lg">{t.home.noResults}</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -96,14 +94,14 @@ export function MenuSection() {
     <section id="menu" className="py-16 bg-[#1a1a1a]">
       <div className="container mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="text-4xl font-bold text-white mb-4">Our Menu</h2>
-          <p className="text-gray-400 text-lg">Discover our curated selection of premium dishes</p>
+          <h2 className="text-4xl font-bold text-white mb-4">{t.home.menuTitle}</h2>
+          <p className="text-gray-400 text-lg">{t.home.menuSubtitle}</p>
         </div>
 
         {categories.map((category) => (
           <div key={category} className="mb-16">
             <h3 className="text-2xl font-bold text-white mb-8 pb-4 border-b border-gray-800">
-              {category}
+              {translateCategory(t, category)}
             </h3>
             <MenuCarousel items={menuItems.filter((item) => item.category === category)} />
           </div>

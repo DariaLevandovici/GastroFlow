@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,13 +19,30 @@ public class AddressController : ControllerBase
         _addressService = addressService;
     }
 
+    [HttpGet("all")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetAll()
+    {
+        var addresses = await _addressService.GetAllAddressesAsync();
+        return Ok(addresses);
+    }
+
+    [HttpGet("{id}")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> GetById(int id)
+    {
+        var address = await _addressService.GetAddressByIdAsync(id);
+        if (address == null) return NotFound();
+        return Ok(address);
+    }
+
     [HttpGet]
     public async Task<IActionResult> GetMyAddresses()
     {
-        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!int.TryParse(userIdString, out var userId)) return Unauthorized();
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
 
-        var addresses = await _addressService.GetUserAddressesAsync(userId);
+        var addresses = await _addressService.GetUserAddressesAsync(userId.Value);
         return Ok(addresses);
     }
 
@@ -33,20 +51,30 @@ public class AddressController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!int.TryParse(userIdString, out var userId)) return Unauthorized();
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
 
-        var created = await _addressService.AddAddressAsync(userId, dto);
+        var created = await _addressService.AddAddressAsync(userId.Value, dto);
         return Ok(created);
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeleteAddress(int id)
     {
-        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!int.TryParse(userIdString, out var userId)) return Unauthorized();
+        var userId = GetCurrentUserId();
+        if (userId == null) return Unauthorized();
 
-        await _addressService.DeleteAddressAsync(userId, id);
+        await _addressService.DeleteAddressAsync(userId.Value, id);
         return NoContent();
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var userIdString =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+            User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
+            User.FindFirst("sub")?.Value;
+
+        return int.TryParse(userIdString, out var userId) ? userId : null;
     }
 }

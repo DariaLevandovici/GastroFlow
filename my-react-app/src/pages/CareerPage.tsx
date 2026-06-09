@@ -12,30 +12,17 @@ import {
   SelectTrigger,
   SelectValue
 } from '../ui/select';
+import { useApp } from '../context/AppContext';
 
-const positions = [
-  {
-    id: 'waiter',
-    title: 'Waiter',
-    description: 'Join our front-of-house team and deliver exceptional service',
-    requirements: ['Excellent communication skills', 'Customer service experience', 'Team player']
-  },
-  {
-    id: 'cook',
-    title: 'Cook',
-    description: 'Create amazing dishes in our professional kitchen',
-    requirements: ['Culinary training or experience', 'Knowledge of food safety', 'Passion for cooking']
-  },
-  {
-    id: 'manager',
-    title: 'Manager',
-    description: 'Lead our team and ensure smooth operations',
-    requirements: ['Restaurant management experience', 'Leadership skills', 'Problem-solving ability']
-  }
-];
+const positionIds = ['waiter', 'cook', 'manager'] as const;
 
 export function CareerPage() {
   const navigate = useNavigate();
+  const { t } = useApp();
+  const positions = t.career.positions.map((position, index) => ({
+    ...position,
+    id: positionIds[index],
+  }));
   const [formData, setFormData] = useState({
     position: '',
     fullName: '',
@@ -47,7 +34,7 @@ export function CareerPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    alert('Application submitted successfully! We will contact you soon.');
+    alert(t.career.successAlert);
     navigate('/');
   };
 
@@ -61,11 +48,10 @@ export function CareerPage() {
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">Join Our Team</h1>
-          <p className="text-gray-400 text-lg">Be part of the GastroFlow family</p>
+          <h1 className="text-4xl font-bold text-white mb-4">{t.career.title}</h1>
+          <p className="text-gray-400 text-lg">{t.career.subtitle}</p>
         </div>
 
-        {/* Available Positions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
           {positions.map(position => (
             <Card
@@ -76,11 +62,11 @@ export function CareerPage() {
               <h3 className="text-xl font-bold text-white mb-3">{position.title}</h3>
               <p className="text-gray-400 text-sm mb-4">{position.description}</p>
               <div className="space-y-2">
-                <p className="text-sm text-gray-500 font-semibold">Requirements:</p>
+                <p className="text-sm text-gray-500 font-semibold">{t.career.requirements}</p>
                 <ul className="space-y-1">
                   {position.requirements.map((req, idx) => (
                     <li key={idx} className="text-sm text-gray-400 flex items-start gap-2">
-                      <span className="text-blue-400 mt-1">•</span>
+                      <span className="text-blue-400 mt-1">-</span>
                       <span>{req}</span>
                     </li>
                   ))}
@@ -90,23 +76,21 @@ export function CareerPage() {
           ))}
         </div>
 
-        {/* Application Form */}
         <div className="bg-[#242424] rounded-2xl p-8 border border-gray-800">
-          <h2 className="text-2xl font-bold text-white mb-8">Application Form</h2>
+          <h2 className="text-2xl font-bold text-white mb-8">{t.career.applicationFormTitle}</h2>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Position Selection */}
             <div>
               <label className="flex items-center gap-2 text-white mb-3">
                 <Briefcase className="w-5 h-5 text-blue-400" />
-                <span>Position Applied For</span>
+                <span>{t.career.positionLabel}</span>
               </label>
               <Select
                 value={formData.position}
                 onValueChange={(value) => setFormData({ ...formData, position: value })}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select a position" />
+                  <SelectValue placeholder={t.career.selectPosition} />
                 </SelectTrigger>
                 <SelectContent>
                   {positions.map(pos => (
@@ -116,12 +100,11 @@ export function CareerPage() {
               </Select>
             </div>
 
-            {/* Personal Information */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="flex items-center gap-2 text-white mb-3">
                   <User className="w-5 h-5 text-blue-400" />
-                  <span>Full Name</span>
+                  <span>{t.career.fullName}</span>
                 </label>
                 <Input
                   type="text"
@@ -135,7 +118,7 @@ export function CareerPage() {
               <div>
                 <label className="flex items-center gap-2 text-white mb-3">
                   <Mail className="w-5 h-5 text-blue-400" />
-                  <span>Email</span>
+                  <span>{t.career.email}</span>
                 </label>
                 <Input
                   type="email"
@@ -150,7 +133,7 @@ export function CareerPage() {
             <div>
               <label className="flex items-center gap-2 text-white mb-3">
                 <Phone className="w-5 h-5 text-blue-400" />
-                <span>Phone Number</span>
+                <span>{t.career.phoneNumber}</span>
               </label>
               <Input
                 type="tel"
@@ -161,11 +144,10 @@ export function CareerPage() {
               />
             </div>
 
-            {/* CV Upload */}
             <div>
               <label className="flex items-center gap-2 text-white mb-3">
                 <Upload className="w-5 h-5 text-blue-400" />
-                <span>Upload CV</span>
+                <span>{t.career.uploadCV}</span>
               </label>
               <div className="relative">
                 <Input
@@ -177,32 +159,30 @@ export function CareerPage() {
                 />
               </div>
               {formData.cv && (
-                <p className="text-sm text-green-400 mt-2">✓ {formData.cv.name}</p>
+                <p className="text-sm text-green-400 mt-2">OK {formData.cv.name}</p>
               )}
             </div>
 
-            {/* Cover Message */}
             <div>
               <label className="flex items-center gap-2 text-white mb-3">
                 <MessageSquare className="w-5 h-5 text-blue-400" />
-                <span>Cover Letter / Message</span>
+                <span>{t.career.coverLetter}</span>
               </label>
               <Textarea
                 required
                 rows={6}
-                placeholder="Tell us why you'd be a great fit for our team..."
+                placeholder={t.career.coverLetterPlaceholder}
                 value={formData.message}
                 onChange={(e) => setFormData({ ...formData, message: e.target.value })}
               />
             </div>
 
-            {/* Submit Button */}
             <div className="flex gap-4">
               <Button
                 type="submit"
                 className="flex-1 h-12"
               >
-                Submit Application
+                {t.career.submitApplication}
               </Button>
               <Button
                 type="button"
@@ -210,7 +190,7 @@ export function CareerPage() {
                 variant="secondary"
                 className="h-12 px-8"
               >
-                Cancel
+                {t.career.cancel}
               </Button>
             </div>
           </form>

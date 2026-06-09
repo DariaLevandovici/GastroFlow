@@ -1,3 +1,4 @@
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -31,10 +32,10 @@ public class OrdersController : ControllerBase
     [Authorize(Roles = "Client")]
     public async Task<IActionResult> GetMyOrders()
     {
-        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!int.TryParse(userIdString, out var clientId)) return Unauthorized();
+        var clientId = GetCurrentUserId();
+        if (clientId == null) return Unauthorized();
 
-        var orders = await _orderService.GetOrdersByClientAsync(clientId);
+        var orders = await _orderService.GetOrdersByClientAsync(clientId.Value);
         return Ok(orders);
     }
 
@@ -53,24 +54,46 @@ public class OrdersController : ControllerBase
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!int.TryParse(userIdString, out var clientId)) return Unauthorized();
+        var clientId = GetCurrentUserId();
+        if (clientId == null) return Unauthorized();
 
-        var created = await _orderService.CreateClientOrderAsync(clientId, dto);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        try
+        {
+            var created = await _orderService.CreateClientOrderAsync(clientId.Value, dto);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPost("waiter")]
-    [Authorize(Roles = "Waiter")]
+    [Authorize(Roles = "Admin,Waiter")]
     public async Task<IActionResult> CreateWaiterOrder([FromBody] CreateOrderDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
 
-        var waiterIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (!int.TryParse(waiterIdString, out var waiterId)) return Unauthorized();
+        var waiterId = GetCurrentUserId();
+        if (waiterId == null) return Unauthorized();
 
-        var created = await _orderService.CreateWaiterOrderAsync(waiterId, dto);
-        return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        try
+        {
+            var created = await _orderService.CreateWaiterOrderAsync(waiterId.Value, dto);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPatch("{id}/status")]
@@ -78,15 +101,48 @@ public class OrdersController : ControllerBase
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
-        await _orderService.UpdateOrderStatusAsync(id, dto);
-        return NoContent();
+
+        try
+        {
+            await _orderService.UpdateOrderStatusAsync(id, dto);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
     }
 
     [HttpPatch("{id}/payment")]
     [Authorize(Roles = "Admin,Waiter")]
     public async Task<IActionResult> UpdatePayment(int id, [FromBody] bool isPaid)
     {
-        await _orderService.UpdateOrderPaymentAsync(id, isPaid);
-        return NoContent();
+        try
+        {
+            await _orderService.UpdateOrderPaymentAsync(id, isPaid);
+            return NoContent();
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    private int? GetCurrentUserId()
+    {
+        var userIdString =
+            User.FindFirst(ClaimTypes.NameIdentifier)?.Value ??
+            User.FindFirst(JwtRegisteredClaimNames.Sub)?.Value ??
+            User.FindFirst("sub")?.Value;
+
+        return int.TryParse(userIdString, out var userId) ? userId : null;
     }
 }

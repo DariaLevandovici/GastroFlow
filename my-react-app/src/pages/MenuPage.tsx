@@ -3,16 +3,25 @@ import { Filter, X, Search } from 'lucide-react';
 import { useSearchParams } from 'react-router';
 import { useApp } from '../context/AppContext';
 import { AddToCartButton } from '../components/AddToCartButton';
+import { AdminBackButton } from '../components/AdminBackButton';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Card } from '../ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { getMenuCategories, getMenuItems, type MenuItem } from '../services/menuService';
+import {
+  getTranslatedMenuSearchText,
+  translateCategory,
+  translateDietary,
+  translateIngredient,
+  translateProductDescription,
+  translateProductName,
+} from '../data/translationHelpers';
 
 const dietaryOptions = ['All', 'vegan', 'vegetarian', 'gluten-free'];
 
 export function MenuPage() {
-  const { unavailableItems, searchQuery } = useApp();
+  const { unavailableItems, searchQuery, t } = useApp();
   const [searchParams] = useSearchParams();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
   const [categories, setCategories] = useState<string[]>(['All']);
@@ -43,7 +52,7 @@ export function MenuPage() {
         setCategories(['All', ...fetchedCategories]);
       } catch {
         if (!isMounted) return;
-        setMenuError('Unable to load menu data. Please try again.');
+        setMenuError(t.menu.loadError);
       } finally {
         if (isMounted) {
           setIsLoadingMenu(false);
@@ -61,18 +70,13 @@ export function MenuPage() {
     // Local search (name, description, or ingredients) + global search query from context
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
-      const nameMatch = item.name.toLowerCase().includes(q);
-      const descMatch = item.description.toLowerCase().includes(q);
-      const ingMatch = item.ingredients.some(ing => ing.toLowerCase().includes(q));
-      if (!nameMatch && !descMatch && !ingMatch) return false;
+      if (!getTranslatedMenuSearchText(t, item).includes(q)) return false;
     }
 
     // Also apply global search query from the navbar (AppContext)
     if (searchQuery) {
       const q = searchQuery.toLowerCase();
-      const nameMatch = item.name.toLowerCase().includes(q);
-      const ingMatch = item.ingredients.some(ing => ing.toLowerCase().includes(q));
-      if (!nameMatch && !ingMatch) return false;
+      if (!getTranslatedMenuSearchText(t, item).includes(q)) return false;
     }
 
     // Category filter
@@ -82,9 +86,13 @@ export function MenuPage() {
     if (selectedDietary !== 'All' && !item.dietary.includes(selectedDietary)) return false;
 
     // Ingredient filter (no-op when ingredients array is empty)
-    if (ingredientFilter && item.ingredients.length > 0 && !item.ingredients.some(ing =>
-      ing.toLowerCase().includes(ingredientFilter.toLowerCase())
-    )) return false;
+    if (ingredientFilter && item.ingredients.length > 0) {
+      const q = ingredientFilter.toLowerCase();
+      const matchesIngredient = item.ingredients.some((ing) =>
+        ing.toLowerCase().includes(q) || translateIngredient(t, ing).toLowerCase().includes(q)
+      );
+      if (!matchesIngredient) return false;
+    }
 
     // Price filter
     if (item.price < priceRange.min || item.price > priceRange.max) return false;
@@ -98,11 +106,12 @@ export function MenuPage() {
   return (
     <div className="min-h-screen bg-[#1a1a1a] pt-24 pb-16">
       <div className="container mx-auto px-4 sm:px-6">
+        <AdminBackButton className="mb-6" />
         <div className="flex gap-6 lg:gap-8">
           {/* Sidebar */}
           <aside className="hidden lg:block w-64 flex-shrink-0 self-start">
             <div className="sticky top-24 max-h-[calc(100vh-7rem)] overflow-y-auto overscroll-contain bg-[#242424] rounded-2xl p-6 border border-gray-800">
-              <h2 className="text-xl font-bold text-white mb-6">Categories</h2>
+              <h2 className="text-xl font-bold text-white mb-6">{t.menu.categoriesTitle}</h2>
               <ul className="space-y-2">
                 {categories.map(category => (
                   <li key={category}>
@@ -114,25 +123,25 @@ export function MenuPage() {
                         : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                         }`}
                     >
-                      {category}
+                      {translateCategory(t, category)}
                     </Button>
                   </li>
                 ))}
               </ul>
 
               <div className="mt-8 pt-8 border-t border-gray-700">
-                <h3 className="text-lg font-bold text-white mb-4">Filters</h3>
+                <h3 className="text-lg font-bold text-white mb-4">{t.menu.filtersTitle}</h3>
 
                 {/* Dietary Preferences */}
                 <div className="mb-6">
-                  <label className="text-sm text-gray-400 mb-2 block">Dietary</label>
+                  <label className="text-sm text-gray-400 mb-2 block">{t.menu.dietary}</label>
                   <Select value={selectedDietary} onValueChange={setSelectedDietary}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {dietaryOptions.map(option => (
-                        <SelectItem key={option} value={option}>{option}</SelectItem>
+                        <SelectItem key={option} value={option}>{translateDietary(t, option)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -140,12 +149,12 @@ export function MenuPage() {
 
                 {/* Ingredient Filter */}
                 <div className="mb-6">
-                  <label className="text-sm text-gray-400 mb-2 block">Ingredients</label>
+                  <label className="text-sm text-gray-400 mb-2 block">{t.menu.ingredients}</label>
                   <Input
                     type="text"
                     value={ingredientFilter}
                     onChange={(e) => setIngredientFilter(e.target.value)}
-                    placeholder="Search ingredients..."
+                    placeholder={t.menu.searchIngredients}
                     className="h-10"
                   />
                 </div>
@@ -153,7 +162,7 @@ export function MenuPage() {
                 {/* Price Range */}
                 <div>
                   <label className="text-sm text-gray-400 mb-2 block">
-                    Price Range: {priceRange.min} - {priceRange.max} MDL
+                    {t.menu.priceRange}: {priceRange.min} - {priceRange.max} MDL
                   </label>
                   <div className="space-y-2">
                     <input
@@ -177,7 +186,7 @@ export function MenuPage() {
                   variant="secondary"
                   className="w-full mt-6"
                 >
-                  Reset Filters
+                  {t.menu.resetFilters}
                 </Button>
               </div>
             </div>
@@ -197,7 +206,7 @@ export function MenuPage() {
             <div className="lg:hidden fixed inset-0 z-50 bg-black/80 backdrop-blur-sm">
               <div className="fixed right-0 top-0 bottom-0 w-80 bg-[#242424] p-6 overflow-y-auto">
                 <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-xl font-bold text-white">Filters</h2>
+                  <h2 className="text-xl font-bold text-white">{t.menu.filtersTitle}</h2>
                   <Button onClick={() => setShowFilters(false)} variant="ghost" size="icon" className="text-gray-400 hover:text-white">
                     <X className="w-6 h-6" />
                   </Button>
@@ -216,7 +225,7 @@ export function MenuPage() {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search by dish name or ingredient..."
+                placeholder={t.menu.searchPlaceholder}
                 className="h-10 border-0 bg-transparent px-0 shadow-none focus-visible:ring-0"
               />
               {searchTerm && (
@@ -227,15 +236,15 @@ export function MenuPage() {
             </div>
 
             <div className="mb-6 sm:mb-8">
-              <h1 className="mb-2 text-3xl font-bold text-white sm:text-4xl">Our Menu</h1>
+              <h1 className="mb-2 text-3xl font-bold text-white sm:text-4xl">{t.menu.title}</h1>
               <p className="text-gray-400">
-                Showing {filteredItems.length} of {menuItems.length} items
+                {t.menu.showing} {filteredItems.length} {t.menu.of} {menuItems.length} {t.menu.items}
               </p>
             </div>
 
             {isLoadingMenu && (
               <div className="text-center py-16">
-                <p className="text-gray-400 text-lg">Loading menu...</p>
+                <p className="text-gray-400 text-lg">{t.menu.loadingMenu}</p>
               </div>
             )}
 
@@ -243,7 +252,7 @@ export function MenuPage() {
               <div className="text-center py-16">
                 <p className="text-red-400 text-lg mb-4">{menuError}</p>
                 <Button onClick={() => window.location.reload()} variant="secondary">
-                  Retry
+                  {t.menu.retry}
                 </Button>
               </div>
             )}
@@ -258,24 +267,24 @@ export function MenuPage() {
                   <div className="h-48 overflow-hidden flex-shrink-0">
                     <img
                       src={item.image}
-                      alt={item.name}
+                      alt={translateProductName(t, item.name)}
                       className="w-full h-full object-cover"
                     />
                   </div>
                   <div className="flex flex-grow flex-col p-4 sm:p-6">
                     <div className="mb-3 flex items-start justify-between gap-3">
-                      <h3 className="text-lg font-bold text-white sm:text-xl">{item.name}</h3>
+                      <h3 className="text-lg font-bold text-white sm:text-xl">{translateProductName(t, item.name)}</h3>
                       <span className="text-lg font-bold text-blue-400">{item.price} MDL</span>
                     </div>
-                    <p className="text-gray-400 text-sm mb-3">{item.description}</p>
+                    <p className="text-gray-400 text-sm mb-3">{translateProductDescription(t, item)}</p>
 
                     {/* Ingredients */}
                     <div className="mb-3">
-                      <p className="text-xs text-gray-500 mb-1">Ingredients:</p>
+                      <p className="text-xs text-gray-500 mb-1">{t.menu.ingredientsLabel}</p>
                       <div className="flex flex-wrap gap-1">
                         {item.ingredients.map((ing, idx) => (
                           <span key={idx} className="text-xs bg-gray-800 text-gray-400 px-2 py-1 rounded">
-                            {ing}
+                            {translateIngredient(t, ing)}
                           </span>
                         ))}
                       </div>
@@ -286,7 +295,7 @@ export function MenuPage() {
                       <div className="flex flex-wrap gap-1 mb-4">
                         {item.dietary.map((diet, idx) => (
                           <span key={idx} className="text-xs bg-green-900/30 text-green-400 px-2 py-1 rounded">
-                            {diet}
+                            {translateDietary(t, diet)}
                           </span>
                         ))}
                       </div>
@@ -303,7 +312,7 @@ export function MenuPage() {
 
             {!isLoadingMenu && !menuError && filteredItems.length === 0 && (
               <div className="text-center py-16">
-                <p className="text-gray-400 text-lg">No items match your filters</p>
+                <p className="text-gray-400 text-lg">{t.menu.noMatch}</p>
               </div>
             )}
           </div>

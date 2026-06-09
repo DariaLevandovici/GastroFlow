@@ -10,6 +10,8 @@ public class OrderDto
     public int Id { get; set; }
     public DateTime CreatedAt { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string OrderType { get; set; } = string.Empty;
+    public string? DeliveryAddress { get; set; }
     
     public int? ClientId { get; set; }
     public string? ClientName { get; set; }
@@ -37,7 +39,9 @@ public class OrderItemDto
 
 public class CreateOrderDto
 {
-    public int? TableId { get; set; } // Optional, for waiter orders
+    public string OrderType { get; set; } = "Delivery";
+    public string? DeliveryAddress { get; set; }
+    public int? TableId { get; set; }
     
     [Required]
     [MinLength(1, ErrorMessage = "Order must contain at least one item.")]
@@ -56,5 +60,6 @@ public class CreateOrderItemDto
 
 public class UpdateOrderStatusDto
 {
-    public OrderStatus Status { get; set; }
+    [Required]
+    public string Status { get; set; } = string.Empty;
 }
