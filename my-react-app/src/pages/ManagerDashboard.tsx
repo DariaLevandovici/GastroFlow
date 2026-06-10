@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
-import { Calendar, ClipboardList, DollarSign, LogOut, Package, TrendingUp, Users } from 'lucide-react';
+import { BookOpen, Calendar, ClipboardList, DollarSign, Leaf, LogOut, Package, TrendingUp, Users } from 'lucide-react';
 import { useNavigate } from 'react-router';
 import { useApp } from '../context/AppContext';
 import { Button } from '../ui/button';
 import { getOrders, type ApiOrder } from '../services/orderService';
 import { getReservations, type ApiReservation } from '../services/reservationService';
 import { getTables, type ApiTable } from '../services/tableService';
+import { ProductsManager } from '../components/ProductsManager';
+import { IngredientsManager } from '../components/IngredientsManager';
 
 interface DisplayOrder {
   id: string;
@@ -237,6 +239,18 @@ export function ManagerDashboard() {
               <Package className="h-4 w-4" />
               {t.manager.viewTables}
             </Button>
+            <Button onClick={() => scrollToSection('manager-products')} variant="secondary" className="h-12">
+              <Package className="h-4 w-4" />
+              {t.manager.viewProducts}
+            </Button>
+            <Button onClick={() => scrollToSection('manager-ingredients')} variant="secondary" className="h-12">
+              <Leaf className="h-4 w-4" />
+              {t.manager.viewIngredients}
+            </Button>
+            <Button onClick={() => scrollToSection('manager-products')} variant="secondary" className="h-12">
+              <BookOpen className="h-4 w-4" />
+              {t.manager.manageRecipes}
+            </Button>
           </div>
         </section>
 
@@ -335,6 +349,22 @@ export function ManagerDashboard() {
               </div>
             )}
           </div>
+        </section>
+
+        <section id="manager-products" className="mt-8 rounded-2xl border border-blue-950/60 bg-[#182434] p-6">
+          <div className="mb-5">
+            <h2 className="text-2xl font-bold">{t.manager.productsManagement}</h2>
+            <p className="mt-1 text-sm text-gray-400">{t.manager.productManagementHint}</p>
+          </div>
+          <ProductsManager />
+        </section>
+
+        <section id="manager-ingredients" className="mt-8 rounded-2xl border border-blue-950/60 bg-[#182434] p-6">
+          <div className="mb-5">
+            <h2 className="text-2xl font-bold">{t.manager.inventoryManagement}</h2>
+            <p className="mt-1 text-sm text-gray-400">{t.manager.ingredientManagementHint}</p>
+          </div>
+          <IngredientsManager />
         </section>
       </div>
     </div>

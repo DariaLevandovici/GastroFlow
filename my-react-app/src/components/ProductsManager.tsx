@@ -171,7 +171,7 @@ export function ProductsManager() {
     setDietaryDisplay(jsonToDisplay(product.dietary));
     setSubmitStatus('idle');
     setSubmitError(null);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('product-form-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleClearForm = () => {
