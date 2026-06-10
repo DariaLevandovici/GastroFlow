@@ -22,7 +22,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Waiter")]
+    [Authorize(Roles = "Admin,Manager,Waiter")]
     public async Task<IActionResult> GetAll()
     {
         var reservations = await _context.Reservations
@@ -50,7 +50,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin,Waiter,Client")]
+    [Authorize(Roles = "Admin,Manager,Waiter,Client")]
     public async Task<IActionResult> GetById(int id)
     {
         var reservation = await _context.Reservations
@@ -79,7 +79,7 @@ public class ReservationsController : ControllerBase
     }
 
     [HttpGet("table-blocks")]
-    [Authorize(Roles = "Admin,Waiter,Client")]
+    [Authorize(Roles = "Admin,Manager,Waiter,Client")]
     public async Task<IActionResult> GetTableBlocks([FromQuery] DateTime? date = null)
     {
         var userId = GetCurrentUserId();

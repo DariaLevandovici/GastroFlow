@@ -250,7 +250,7 @@ export function CookRecipesPage() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button
-            onClick={() => navigate('/dashboard/cook')}
+            onClick={() => navigate('/cook')}
             variant="ghost"
             size="icon"
           >

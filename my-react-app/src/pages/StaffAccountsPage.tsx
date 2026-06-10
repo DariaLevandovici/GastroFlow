@@ -30,7 +30,7 @@ export function StaffAccountsPage() {
 
         {/* Sageata inapoi */}
         <button
-          onClick={() => navigate('/dashboard/manager')}
+          onClick={() => navigate('/manager')}
           className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors mb-8"
         >
           <ArrowLeft className="w-5 h-5" />

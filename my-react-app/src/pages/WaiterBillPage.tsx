@@ -273,7 +273,7 @@ export function WaiterBillPage() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button
-            onClick={() => navigate('/dashboard/waiter')}
+            onClick={() => navigate('/waiter')}
             variant="ghost"
             size="icon"
           >

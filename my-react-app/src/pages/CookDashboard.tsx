@@ -274,7 +274,7 @@ export function CookDashboard() {
           </div>
           <div className="flex gap-3">
             <Button
-              onClick={() => navigate('/dashboard/cook/recipes')}
+              onClick={() => navigate('/cook/recipes')}
               variant="secondary"
               className="px-6"
             >

@@ -89,7 +89,7 @@ public class OrderService : IOrderService
             ClientId = clientId,
             WaiterId = waiterId,
             TableId = tableId,
-            IsPaid = false,
+            IsPaid = orderType == OrderType.Delivery && dto.IsPaid,
             TotalAmount = 0
         };
 

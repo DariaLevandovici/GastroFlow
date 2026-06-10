@@ -3,6 +3,7 @@ import { API_ENDPOINTS } from '../config/api';
 export interface LoginResponse {
   token: string;
   role: string;
+  roleId: number;
   firstName: string;
   lastName: string;
 }

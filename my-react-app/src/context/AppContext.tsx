@@ -52,12 +52,14 @@ interface Table {
 }
 
 type UserRole = 'client' | 'waiter' | 'cook' | 'manager' | 'admin';
+type UserRoleId = 0 | 1 | 2 | 3 | 4;
 
 interface User {
   id: string;
   name: string;
   email: string;
   role: UserRole;
+  roleId: UserRoleId;
 }
 
 interface InventoryItem {
@@ -74,7 +76,7 @@ interface AppContextType {
   setLanguage: (language: Language | ((current: Language) => Language)) => void;
   t: Translations;
   login: (email: string, password: string, role: 'client' | 'staff') => User;
-  setAuthenticatedUser: (data: { email: string; role: string; firstName?: string; lastName?: string }) => User;
+  setAuthenticatedUser: (data: { email: string; role: string; roleId?: number; firstName?: string; lastName?: string }) => User;
   logout: () => void;
   cart: CartItem[];
   addToCart: (item: Omit<CartItem, 'quantity'>) => void;
@@ -212,7 +214,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
     // Mock login - in production, this would call an API
     if (role === 'client') {
-      const nextUser = { id: '1', name: 'John Doe', email, role: 'client' as const };
+      const nextUser = { id: '1', name: 'John Doe', email, role: 'client' as const, roleId: 0 as const };
       setUser(nextUser);
       return nextUser;
     }
@@ -222,31 +224,53 @@ export function AppProvider({ children }: { children: ReactNode }) {
       normalizedEmail.includes('waiter') ? 'waiter' :
         normalizedEmail.includes('cook') || normalizedEmail.includes('bucatar') || normalizedEmail.includes('chef') ? 'cook' :
           'manager';
+    const staffRoleId: UserRoleId = staffRole === 'admin' ? 4 :
+      staffRole === 'manager' ? 3 :
+        staffRole === 'cook' ? 2 :
+          1;
     const nextUser = {
       id: staffRole === 'admin' ? 'admin' : '2',
       name: staffRole === 'admin' ? 'Admin GastroFlow' : 'Staff Member',
       email,
-      role: staffRole
+      role: staffRole,
+      roleId: staffRoleId
     };
 
     setUser(nextUser);
     return nextUser;
   };
 
-  const setAuthenticatedUser = (data: { email: string; role: string; firstName?: string; lastName?: string }) => {
+  const setAuthenticatedUser = (data: { email: string; role: string; roleId?: number; firstName?: string; lastName?: string }) => {
     const normalizedRole = data.role.toLowerCase();
+    const roleIdFromText: UserRoleId =
+      normalizedRole === 'admin' ? 4 :
+        normalizedRole === 'manager' ? 3 :
+          normalizedRole === 'chef' || normalizedRole === 'cook' ? 2 :
+            normalizedRole === 'waiter' ? 1 :
+              0;
+    const mappedRoleId: UserRoleId =
+      data.roleId === 4 ? 4 :
+        data.roleId === 3 ? 3 :
+          data.roleId === 2 ? 2 :
+            data.roleId === 1 ? 1 :
+              roleIdFromText;
     const mappedRole: UserRole =
-      normalizedRole === 'admin' ? 'admin' :
-        normalizedRole === 'waiter' ? 'waiter' :
-          normalizedRole === 'chef' || normalizedRole === 'cook' ? 'cook' :
-            normalizedRole === 'manager' ? 'manager' :
-              'client';
+      mappedRoleId === 4 ? 'admin' :
+        mappedRoleId === 3 ? 'manager' :
+          mappedRoleId === 2 ? 'cook' :
+            mappedRoleId === 1 ? 'waiter' :
+              normalizedRole === 'admin' ? 'admin' :
+                normalizedRole === 'manager' ? 'manager' :
+                  normalizedRole === 'waiter' ? 'waiter' :
+                    normalizedRole === 'chef' || normalizedRole === 'cook' ? 'cook' :
+                      'client';
     const name = [data.firstName, data.lastName].filter(Boolean).join(' ').trim();
     const nextUser = {
       id: mappedRole,
       name: name || (mappedRole === 'admin' ? 'Admin GastroFlow' : data.email),
       email: data.email,
-      role: mappedRole
+      role: mappedRole,
+      roleId: mappedRoleId
     };
 
     setUser(nextUser);

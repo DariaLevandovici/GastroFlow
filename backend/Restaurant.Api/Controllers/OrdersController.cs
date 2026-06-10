@@ -21,7 +21,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,Waiter,Chef")]
+    [Authorize(Roles = "Admin,Manager,Waiter,Cook")]
     public async Task<IActionResult> GetAll()
     {
         var orders = await _orderService.GetAllOrdersAsync();
@@ -97,7 +97,7 @@ public class OrdersController : ControllerBase
     }
 
     [HttpPatch("{id}/status")]
-    [Authorize(Roles = "Admin,Chef,Waiter")]
+    [Authorize(Roles = "Admin,Cook,Waiter")]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOrderStatusDto dto)
     {
         if (!ModelState.IsValid) return BadRequest(ModelState);
