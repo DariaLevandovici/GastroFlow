@@ -1,23 +1,32 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router';
 import {
   Activity,
+  AlertCircle,
   ArrowRight,
   BarChart3,
   CalendarDays,
+  CheckCircle2,
   ClipboardList,
   DollarSign,
   LayoutDashboard,
+  Lock,
   LogOut,
+  Mail,
   Package,
   ShieldAlert,
+  ShieldCheck,
   Tag,
+  UserPlus,
   Users,
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import type { Product } from '../types/product';
 import {
+  createStaffAccount,
   getAdminCategories,
   getAdminOrders,
   getAdminProducts,
@@ -27,7 +36,25 @@ import {
   type AdminOrder,
   type AdminReservation,
   type AdminUser,
+  type CreateStaffAccountPayload,
 } from '../services/adminService';
+
+type StaffRole = CreateStaffAccountPayload['role'];
+
+const staffRoleOptions: Array<{ value: StaffRole; label: string; roleId: number }> = [
+  { value: 'Waiter', label: 'Waiter', roleId: 1 },
+  { value: 'Cook', label: 'Cook', roleId: 2 },
+  { value: 'Manager', label: 'Manager', roleId: 3 },
+  { value: 'Admin', label: 'Admin', roleId: 4 },
+];
+
+const initialStaffForm: CreateStaffAccountPayload = {
+  firstName: '',
+  lastName: '',
+  email: '',
+  password: '',
+  role: 'Waiter',
+};
 
 interface NormalizedOrder {
   id: string;
@@ -155,6 +182,9 @@ export function AdminPage() {
   const [apiReservations, setApiReservations] = useState<AdminReservation[] | null>(null);
   const [apiUsers, setApiUsers] = useState<AdminUser[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [staffForm, setStaffForm] = useState<CreateStaffAccountPayload>(initialStaffForm);
+  const [staffCreateStatus, setStaffCreateStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [staffCreateMessage, setStaffCreateMessage] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -336,6 +366,61 @@ export function AdminPage() {
     },
   ];
 
+  const handleCreateStaffAccount = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (user?.roleId !== 4) {
+      setStaffCreateStatus('error');
+      setStaffCreateMessage(t.admin.accessDeniedShort);
+      return;
+    }
+
+    const payload: CreateStaffAccountPayload = {
+      firstName: staffForm.firstName.trim(),
+      lastName: staffForm.lastName.trim(),
+      email: staffForm.email.trim().toLowerCase(),
+      password: staffForm.password,
+      role: staffForm.role,
+    };
+
+    const hasValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email);
+    const hasValidRole = staffRoleOptions.some((role) => role.value === payload.role);
+
+    if (!payload.firstName || !payload.lastName || !hasValidEmail || payload.password.length < 6 || !hasValidRole) {
+      setStaffCreateStatus('error');
+      setStaffCreateMessage(t.admin.invalidData);
+      return;
+    }
+
+    setStaffCreateStatus('loading');
+    setStaffCreateMessage('');
+
+    try {
+      const createdUser = await createStaffAccount(payload);
+      setApiUsers((currentUsers) => (
+        currentUsers
+          ? [createdUser, ...currentUsers.filter((item) => String(item.id) !== String(createdUser.id))]
+          : [createdUser]
+      ));
+      setStaffForm(initialStaffForm);
+      setStaffCreateStatus('success');
+      setStaffCreateMessage(t.admin.staffAccountCreated);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '';
+      setStaffCreateStatus('error');
+
+      if (message.toLowerCase().includes('email already')) {
+        setStaffCreateMessage(t.admin.emailAlreadyExists);
+      } else if (message.toLowerCase().includes('access denied')) {
+        setStaffCreateMessage(t.admin.accessDeniedShort);
+      } else if (message.toLowerCase().includes('invalid data')) {
+        setStaffCreateMessage(t.admin.invalidData);
+      } else {
+        setStaffCreateMessage(t.admin.serverError);
+      }
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -488,6 +573,114 @@ export function AdminPage() {
                 ))}
               </div>
             </div>
+          </section>
+
+          <section className="mt-6 rounded-2xl border border-slate-800 bg-[#1a2330] p-5 shadow-xl shadow-black/10">
+            <div className="mb-5 flex flex-col gap-4 border-b border-slate-800 pb-5 lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex items-start gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-blue-500/25 bg-blue-500/10 text-blue-300">
+                  <UserPlus className="h-6 w-6" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold">{t.admin.createStaffAccount}</h3>
+                  <p className="mt-1 text-sm text-slate-400">{t.admin.createStaffDescription}</p>
+                </div>
+              </div>
+              <span className="rounded-full border border-blue-500/25 bg-blue-500/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-300">
+                {t.admin.adminOnly}
+              </span>
+            </div>
+
+            <form onSubmit={handleCreateStaffAccount} className="space-y-5">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-200">
+                    <UserPlus className="h-4 w-4 text-blue-300" />
+                    {t.admin.firstName}
+                  </label>
+                  <Input
+                    value={staffForm.firstName}
+                    onChange={(event) => setStaffForm((current) => ({ ...current, firstName: event.target.value }))}
+                    placeholder={t.admin.firstNamePlaceholder}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-200">
+                    <UserPlus className="h-4 w-4 text-blue-300" />
+                    {t.admin.lastName}
+                  </label>
+                  <Input
+                    value={staffForm.lastName}
+                    onChange={(event) => setStaffForm((current) => ({ ...current, lastName: event.target.value }))}
+                    placeholder={t.admin.lastNamePlaceholder}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-200">
+                    <Mail className="h-4 w-4 text-blue-300" />
+                    {t.common.email}
+                  </label>
+                  <Input
+                    type="email"
+                    value={staffForm.email}
+                    onChange={(event) => setStaffForm((current) => ({ ...current, email: event.target.value }))}
+                    placeholder="staff@gastroflow.md"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-200">
+                    <Lock className="h-4 w-4 text-blue-300" />
+                    {t.common.password}
+                  </label>
+                  <Input
+                    type="password"
+                    value={staffForm.password}
+                    onChange={(event) => setStaffForm((current) => ({ ...current, password: event.target.value }))}
+                    placeholder={t.admin.passwordPlaceholder}
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-200">
+                    <ShieldCheck className="h-4 w-4 text-blue-300" />
+                    {t.admin.role}
+                  </label>
+                  <Select
+                    value={staffForm.role}
+                    onValueChange={(value) => setStaffForm((current) => ({ ...current, role: value as StaffRole }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {staffRoleOptions.map((role) => (
+                        <SelectItem key={role.value} value={role.value}>
+                          {role.label} ({role.roleId})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-3 border-t border-slate-800 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-h-6">
+                  {staffCreateMessage && (
+                    <div className={`flex items-center gap-2 text-sm font-semibold ${staffCreateStatus === 'success' ? 'text-emerald-300' : 'text-rose-300'}`}>
+                      {staffCreateStatus === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <AlertCircle className="h-4 w-4" />}
+                      {staffCreateMessage}
+                    </div>
+                  )}
+                </div>
+                <Button type="submit" disabled={staffCreateStatus === 'loading'} className="h-12 bg-blue-700 px-6 hover:bg-blue-600">
+                  <UserPlus className="h-4 w-4" />
+                  {staffCreateStatus === 'loading' ? t.admin.creatingStaffAccount : t.admin.create}
+                </Button>
+              </div>
+            </form>
           </section>
 
           <section className="mt-6 rounded-2xl border border-slate-800 bg-[#1a2330] shadow-xl shadow-black/10">

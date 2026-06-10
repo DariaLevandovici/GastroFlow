@@ -36,21 +36,43 @@ public class UsersController : ControllerBase
         user.PasswordHash = string.Empty;
         return Ok(user);
     }
-     [HttpPost]
+    [HttpPost]
     public async Task<IActionResult> Create([FromBody] RegisterDto dto)
     {
-        if (!ModelState.IsValid) return BadRequest(ModelState);
+        if (dto == null || !ModelState.IsValid) return BadRequest(new { message = "Invalid data" });
         
-        if (!System.Enum.TryParse<Role>(dto.Role, true, out var role))
+        if (!System.Enum.TryParse<Role>(dto.Role.Trim(), true, out var role))
         {
-            return BadRequest(new { message = "Invalid role specified." });
+            return BadRequest(new { message = "Invalid data" });
+        }
+
+        if (role == Role.Client)
+        {
+            return BadRequest(new { message = "Invalid data" });
+        }
+
+        var firstName = dto.FirstName.Trim();
+        var lastName = dto.LastName.Trim();
+        var email = dto.Email.Trim().ToLower();
+
+        if (string.IsNullOrWhiteSpace(firstName) ||
+            string.IsNullOrWhiteSpace(lastName) ||
+            string.IsNullOrWhiteSpace(email) ||
+            string.IsNullOrWhiteSpace(dto.Password))
+        {
+            return BadRequest(new { message = "Invalid data" });
+        }
+
+        if (await _userService.EmailExistsAsync(email))
+        {
+            return Conflict(new { message = "Email already exists." });
         }
 
         var user = new User
         {
-            FirstName = dto.FirstName,
-            LastName = dto.LastName,
-            Email = dto.Email,
+            FirstName = firstName,
+            LastName = lastName,
+            Email = email,
             Role = role,
             CreatedAt = System.DateTime.UtcNow
         };

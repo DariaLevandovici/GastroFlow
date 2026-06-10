@@ -23,7 +23,15 @@ export interface AdminUser {
   lastName?: string;
   name?: string;
   email?: string;
-  role?: string;
+  role?: string | number;
+}
+
+export interface CreateStaffAccountPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  role: 'Waiter' | 'Cook' | 'Manager' | 'Admin';
 }
 
 export interface AdminReservation {
@@ -76,4 +84,55 @@ export function getAdminReservations() {
 
 export function getAdminUsers() {
   return fetchArray<AdminUser>(API_ENDPOINTS.users, true);
+}
+
+async function readErrorMessage(response: Response) {
+  try {
+    const data = await response.json();
+    if (typeof data?.message === 'string') return data.message;
+    if (typeof data?.error === 'string') return data.error;
+  } catch {
+    return '';
+  }
+
+  return '';
+}
+
+export async function createStaffAccount(payload: CreateStaffAccountPayload): Promise<AdminUser> {
+  const authHeaders = getAuthHeaders() ?? {};
+  let response: Response;
+
+  try {
+    response = await fetch(API_ENDPOINTS.users, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...authHeaders,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch {
+    throw new Error('Server error');
+  }
+
+  if (!response.ok) {
+    const backendMessage = await readErrorMessage(response);
+    const normalizedMessage = backendMessage.toLowerCase();
+
+    if (response.status === 409 || normalizedMessage.includes('email already')) {
+      throw new Error('Email already exists.');
+    }
+
+    if (response.status === 400) {
+      throw new Error('Invalid data.');
+    }
+
+    if (response.status === 401 || response.status === 403) {
+      throw new Error('Access denied.');
+    }
+
+    throw new Error('Server error');
+  }
+
+  return response.json() as Promise<AdminUser>;
 }

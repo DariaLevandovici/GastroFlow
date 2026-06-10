@@ -26,8 +26,15 @@ public class UserService : IUserService
         return await _dbSession.Context.Users.FindAsync(id);
     }
 
+    public async Task<bool> EmailExistsAsync(string email)
+    {
+        var normalizedEmail = email.Trim().ToLower();
+        return await _dbSession.Context.Users.AnyAsync(user => user.Email.ToLower() == normalizedEmail);
+    }
+
     public async Task<User> CreateUserAsync(User user, string password)
     {
+        user.Email = user.Email.Trim().ToLower();
         user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(password);
         _dbSession.Context.Users.Add(user);
         await _dbSession.SaveChangesAsync();
