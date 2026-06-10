@@ -6,13 +6,16 @@ import { useApp } from '../context/AppContext';
 import { loginWithApi } from '../services/authService';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 
-const demoStaffEmails = new Set([
-  'admin@gastroflow.md',
-  'manager@gastroflow.md',
-  'waiter@gastroflow.md',
-  'cook@gastroflow.md',
-]);
+const demoStaffRoles = [
+  { value: 'waiter', label: 'Waiter', email: 'waiter@gastroflow.md', password: '123456' },
+  { value: 'cook', label: 'Cook', email: 'cook@gastroflow.md', password: '123456' },
+  { value: 'manager', label: 'Manager', email: 'manager@gastroflow.md', password: '123456' },
+  { value: 'admin', label: 'Admin', email: 'admin@gastroflow.md', password: '123456' },
+] as const;
+
+const demoStaffEmails = new Set(demoStaffRoles.map((role) => role.email));
 
 function normalizeRole(role: string) {
   const normalizedRole = role.toLowerCase();
@@ -61,6 +64,7 @@ export function LoginPage() {
   const [typedSubtitle, setTypedSubtitle] = useState('');
   const [isTypingComplete, setIsTypingComplete] = useState(false);
   const [loginType, setLoginType] = useState<'client' | 'staff'>('client');
+  const [selectedStaffRole, setSelectedStaffRole] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -68,6 +72,11 @@ export function LoginPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [infoMessage, setInfoMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const showStaffRoleSelector = loginType === 'staff' && (
+    import.meta.env.DEV ||
+    window.location.hostname === 'localhost' ||
+    window.location.hostname === '127.0.0.1'
+  );
 
   const clearMessages = () => {
     setErrorMessage('');
@@ -76,6 +85,21 @@ export function LoginPage() {
 
   const handleLoginTypeChange = (nextType: 'client' | 'staff') => {
     setLoginType(nextType);
+    if (nextType === 'client') {
+      setSelectedStaffRole('');
+    }
+    clearMessages();
+  };
+
+  const handleStaffRoleSelect = (roleValue: string) => {
+    const selectedRole = demoStaffRoles.find((role) => role.value === roleValue);
+    if (!selectedRole) return;
+
+    setSelectedStaffRole(roleValue);
+    setFormData({
+      email: selectedRole.email,
+      password: selectedRole.password,
+    });
     clearMessages();
   };
 
@@ -311,6 +335,27 @@ export function LoginPage() {
 
         <div className="bg-[#242424] rounded-2xl p-8 border border-gray-800">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {showStaffRoleSelector && (
+              <div className="rounded-xl border border-blue-900/50 bg-blue-950/10 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <span className="text-sm font-medium text-white">{t.login.staffRoleLabel}</span>
+                  <span className="text-xs text-blue-300">{t.login.internalAccess}</span>
+                </div>
+                <Select value={selectedStaffRole} onValueChange={handleStaffRoleSelect}>
+                  <SelectTrigger size="sm" className="border-blue-900/60 bg-[#1f1f1f]">
+                    <SelectValue placeholder={t.login.selectStaffRole} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {demoStaffRoles.map((role) => (
+                      <SelectItem key={role.value} value={role.value}>
+                        {role.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
             <div>
               <label className="flex items-center gap-2 text-white mb-3">
                 <Mail className="w-5 h-5 text-blue-400" />

@@ -136,8 +136,7 @@ export function IngredientsManager() {
     setSubmitStatus('idle');
     setSubmitError(null);
     
-    // Smooth scroll to top where form is
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    document.getElementById('ingredient-form-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
   const handleClearForm = () => {
