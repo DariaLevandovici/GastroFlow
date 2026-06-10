@@ -25,34 +25,34 @@ import { CookiesPage } from './pages/CookiesPage';
 import { Layout } from './components/layout/Layout';
 import { useApp } from './context/AppContext';
 
-function dashboardPathForRole(role?: string) {
-  if (role === 'admin') return '/admin';
-  if (role === 'manager') return '/dashboard/manager';
-  if (role === 'waiter') return '/dashboard/waiter';
-  if (role === 'cook') return '/dashboard/cook';
-  if (role === 'client') return '/dashboard/client';
+function dashboardPathForRoleId(roleId?: number) {
+  if (roleId === 4) return '/admin';
+  if (roleId === 3) return '/manager';
+  if (roleId === 2) return '/cook';
+  if (roleId === 1) return '/waiter';
+  if (roleId === 0) return '/menu';
   return '/login';
 }
 
-function ProtectedRoute({ allowedRoles, children }: { allowedRoles: string[]; children: ReactNode }) {
+function ProtectedRoute({ allowedRoleIds, children }: { allowedRoleIds: number[]; children: ReactNode }) {
   const { user } = useApp();
 
   if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  if (!allowedRoles.includes(user.role)) {
-    return <Navigate to={dashboardPathForRole(user.role)} replace />;
+  if (!allowedRoleIds.includes(user.roleId)) {
+    return <Navigate to={dashboardPathForRoleId(user.roleId)} replace />;
   }
 
   return <>{children}</>;
 }
 
-const adminOnly = ['admin'];
-const clientAccess = ['client', 'admin'];
-const waiterAccess = ['waiter', 'admin'];
-const cookAccess = ['cook', 'admin'];
-const managerAccess = ['manager', 'admin'];
+const adminOnly = [4];
+const clientAccess = [0, 4];
+const waiterAccess = [1, 4];
+const cookAccess = [2, 4];
+const managerAccess = [3, 4];
 
 export const router = createBrowserRouter([
   { path: '/', element: <Layout><HomePage /></Layout> },
@@ -68,13 +68,20 @@ export const router = createBrowserRouter([
   { path: '/login', element: <Layout showFooter={false}><LoginPage /></Layout> },
   { path: '/register', element: <Layout showFooter={false}><RegisterPage /></Layout> },
   { path: '/account', element: <Layout showFooter={false}><AccountPage /></Layout> },
-  { path: '/dashboard/client', element: <ProtectedRoute allowedRoles={clientAccess}><Layout showFooter={false}><ClientDashboard /></Layout></ProtectedRoute> },
-  { path: '/dashboard/waiter', element: <ProtectedRoute allowedRoles={waiterAccess}><WaiterDashboard /></ProtectedRoute> },
-  { path: '/dashboard/waiter/create-order', element: <ProtectedRoute allowedRoles={waiterAccess}><WaiterCreateOrder /></ProtectedRoute> },
-  { path: '/dashboard/waiter/bill', element: <ProtectedRoute allowedRoles={waiterAccess}><WaiterBillPage /></ProtectedRoute> },
-  { path: '/dashboard/cook', element: <ProtectedRoute allowedRoles={cookAccess}><CookDashboard /></ProtectedRoute> },
-  { path: '/dashboard/cook/recipes', element: <ProtectedRoute allowedRoles={cookAccess}><CookRecipesPage /></ProtectedRoute> },
-  { path: '/admin', element: <ProtectedRoute allowedRoles={adminOnly}><AdminPage /></ProtectedRoute> },
-  { path: '/dashboard/manager', element: <ProtectedRoute allowedRoles={managerAccess}><ManagerDashboard /></ProtectedRoute> },
-  { path: '/dashboard/manager/staff-accounts', element: <ProtectedRoute allowedRoles={managerAccess}><StaffAccountsPage /></ProtectedRoute> },
+  { path: '/dashboard/client', element: <ProtectedRoute allowedRoleIds={clientAccess}><Layout showFooter={false}><ClientDashboard /></Layout></ProtectedRoute> },
+  { path: '/waiter', element: <ProtectedRoute allowedRoleIds={waiterAccess}><WaiterDashboard /></ProtectedRoute> },
+  { path: '/waiter/create-order', element: <ProtectedRoute allowedRoleIds={waiterAccess}><WaiterCreateOrder /></ProtectedRoute> },
+  { path: '/waiter/bill', element: <ProtectedRoute allowedRoleIds={waiterAccess}><WaiterBillPage /></ProtectedRoute> },
+  { path: '/dashboard/waiter', element: <ProtectedRoute allowedRoleIds={waiterAccess}><WaiterDashboard /></ProtectedRoute> },
+  { path: '/dashboard/waiter/create-order', element: <ProtectedRoute allowedRoleIds={waiterAccess}><WaiterCreateOrder /></ProtectedRoute> },
+  { path: '/dashboard/waiter/bill', element: <ProtectedRoute allowedRoleIds={waiterAccess}><WaiterBillPage /></ProtectedRoute> },
+  { path: '/cook', element: <ProtectedRoute allowedRoleIds={cookAccess}><CookDashboard /></ProtectedRoute> },
+  { path: '/cook/recipes', element: <ProtectedRoute allowedRoleIds={cookAccess}><CookRecipesPage /></ProtectedRoute> },
+  { path: '/dashboard/cook', element: <ProtectedRoute allowedRoleIds={cookAccess}><CookDashboard /></ProtectedRoute> },
+  { path: '/dashboard/cook/recipes', element: <ProtectedRoute allowedRoleIds={cookAccess}><CookRecipesPage /></ProtectedRoute> },
+  { path: '/admin', element: <ProtectedRoute allowedRoleIds={adminOnly}><AdminPage /></ProtectedRoute> },
+  { path: '/manager', element: <ProtectedRoute allowedRoleIds={managerAccess}><ManagerDashboard /></ProtectedRoute> },
+  { path: '/manager/staff-accounts', element: <ProtectedRoute allowedRoleIds={adminOnly}><StaffAccountsPage /></ProtectedRoute> },
+  { path: '/dashboard/manager', element: <ProtectedRoute allowedRoleIds={managerAccess}><ManagerDashboard /></ProtectedRoute> },
+  { path: '/dashboard/manager/staff-accounts', element: <ProtectedRoute allowedRoleIds={adminOnly}><StaffAccountsPage /></ProtectedRoute> },
 ]);

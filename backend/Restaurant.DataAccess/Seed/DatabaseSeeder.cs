@@ -213,8 +213,8 @@ public static class DatabaseSeeder
         var staffUsers = new[]
         {
             new { Email = "waiter@gastroflow.md", FirstName = "Demo", LastName = "Waiter", Role = Role.Waiter },
-            new { Email = "cook@gastroflow.md", FirstName = "Demo", LastName = "Cook", Role = Role.Chef },
-            new { Email = "bucatar@gastroflow.md", FirstName = "Demo", LastName = "Bucatar", Role = Role.Chef }
+            new { Email = "cook@gastroflow.md", FirstName = "Demo", LastName = "Cook", Role = Role.Cook },
+            new { Email = "manager@gastroflow.md", FirstName = "Demo", LastName = "Manager", Role = Role.Manager }
         };
 
         foreach (var staff in staffUsers)

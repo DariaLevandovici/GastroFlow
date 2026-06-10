@@ -384,11 +384,11 @@ export function AdminPage() {
               <BarChart3 className="h-4 w-4" />
               {t.admin.overview}
             </Button>
-            <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800 hover:text-white" onClick={() => navigate('/dashboard/manager', { state: { fromAdmin: true } })}>
+            <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800 hover:text-white" onClick={() => navigate('/manager', { state: { fromAdmin: true } })}>
               <Users className="h-4 w-4" />
               {t.admin.managerArea}
             </Button>
-            <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800 hover:text-white" onClick={() => navigate('/dashboard/waiter', { state: { fromAdmin: true } })}>
+            <Button variant="ghost" className="w-full justify-start text-slate-300 hover:bg-slate-800 hover:text-white" onClick={() => navigate('/waiter', { state: { fromAdmin: true } })}>
               <ClipboardList className="h-4 w-4" />
               {t.admin.staffOrders}
             </Button>
@@ -470,8 +470,8 @@ export function AdminPage() {
               <div className="space-y-3">
                 {[
                   { label: t.admin.viewMenu, path: '/menu', icon: Package },
-                  { label: t.admin.viewReservations, path: '/dashboard/manager', icon: CalendarDays, adminTab: 'reservations' },
-                  { label: t.admin.viewOrders, path: '/dashboard/waiter', icon: ClipboardList },
+                  { label: t.admin.viewReservations, path: '/manager', icon: CalendarDays, adminTab: 'reservations' },
+                  { label: t.admin.viewOrders, path: '/waiter', icon: ClipboardList },
                 ].map((action) => (
                   <Button
                     key={action.label}

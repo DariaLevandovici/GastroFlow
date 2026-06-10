@@ -9,10 +9,9 @@ import { Input } from '../ui/input';
 
 const demoStaffEmails = new Set([
   'admin@gastroflow.md',
+  'manager@gastroflow.md',
   'waiter@gastroflow.md',
   'cook@gastroflow.md',
-  'bucatar@gastroflow.md',
-  'manager@gastroflow.md',
 ]);
 
 function normalizeRole(role: string) {
@@ -24,11 +23,34 @@ function normalizeRole(role: string) {
   return 'client';
 }
 
-function dashboardPathForRole(role: string) {
-  if (role === 'admin') return '/admin';
-  if (role === 'waiter') return '/dashboard/waiter';
-  if (role === 'cook') return '/dashboard/cook';
-  if (role === 'manager') return '/dashboard/manager';
+function roleIdFromResponse(roleId: number | undefined, role: string) {
+  if (roleId === 4) return 4;
+  if (roleId === 3) return 3;
+  if (roleId === 2) return 2;
+  if (roleId === 1) return 1;
+  if (roleId === 0) return 0;
+
+  const normalizedRole = normalizeRole(role);
+  if (normalizedRole === 'admin') return 4;
+  if (normalizedRole === 'manager') return 3;
+  if (normalizedRole === 'cook') return 2;
+  if (normalizedRole === 'waiter') return 1;
+  return 0;
+}
+
+function roleNameFromId(roleId: number) {
+  if (roleId === 4) return 'admin';
+  if (roleId === 3) return 'manager';
+  if (roleId === 2) return 'cook';
+  if (roleId === 1) return 'waiter';
+  return 'client';
+}
+
+function dashboardPathForRoleId(roleId: number) {
+  if (roleId === 4) return '/admin';
+  if (roleId === 3) return '/manager';
+  if (roleId === 2) return '/cook';
+  if (roleId === 1) return '/waiter';
   return '/menu';
 }
 
@@ -110,26 +132,17 @@ export function LoginPage() {
     const email = formData.email.trim().toLowerCase();
 
     try {
-      if (loginType === 'staff' && email === 'manager@gastroflow.md') {
-        const demoUser = tryDemoStaffLogin();
-        if (!demoUser) {
-          throw new Error('invalid-demo-staff');
-        }
-
-        navigate(dashboardPathForRole(demoUser.role));
-        return;
-      }
-
       const response = await loginWithApi(email, formData.password);
-      const responseRole = normalizeRole(response.role);
+      const responseRoleId = roleIdFromResponse(response.roleId, response.role);
+      const responseRole = roleNameFromId(responseRoleId);
 
-      if (loginType === 'staff' && responseRole === 'client') {
+      if (loginType === 'staff' && responseRoleId === 0) {
         localStorage.removeItem('token');
         setErrorMessage(t.login.clientAccountError);
         return;
       }
 
-      if (loginType === 'client' && responseRole !== 'client') {
+      if (loginType === 'client' && responseRoleId !== 0) {
         localStorage.removeItem('token');
         setErrorMessage(t.login.staffAccountError);
         return;
@@ -138,17 +151,18 @@ export function LoginPage() {
       localStorage.setItem('token', response.token);
       const signedInUser = setAuthenticatedUser({
         email,
-        role: response.role,
+        role: responseRole,
+        roleId: responseRoleId,
         firstName: response.firstName,
         lastName: response.lastName
       });
 
-      navigate(dashboardPathForRole(signedInUser.role));
+      navigate(dashboardPathForRoleId(signedInUser.roleId));
     } catch {
       if (loginType === 'staff') {
         const demoUser = tryDemoStaffLogin();
         if (demoUser) {
-          navigate(dashboardPathForRole(demoUser.role));
+          navigate(dashboardPathForRoleId(demoUser.roleId));
           return;
         }
       }

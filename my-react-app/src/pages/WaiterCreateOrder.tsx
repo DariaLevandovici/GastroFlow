@@ -203,7 +203,7 @@ export function WaiterCreateOrder() {
       updateTableStatus(table.id, 'occupied');
 
       alert(`${t.waiter.orderCreatedForTable} ${created.tableNumber || selectedTable}`);
-      navigate('/dashboard/waiter');
+      navigate('/waiter');
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : t.waiter.createOrderError);
     } finally {
@@ -224,7 +224,7 @@ export function WaiterCreateOrder() {
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
           <Button
-            onClick={() => navigate('/dashboard/waiter')}
+            onClick={() => navigate('/waiter')}
             variant="ghost"
             size="icon"
             className="rounded-xl"

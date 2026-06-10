@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Truck, ShoppingBag, UtensilsCrossed, MapPin, Clock, X, CheckCircle } from 'lucide-react';
+import { Truck, ShoppingBag, UtensilsCrossed, MapPin, Clock, X, CheckCircle, CreditCard } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import { useNavigate } from 'react-router';
 import { Button } from '../ui/button';
@@ -43,6 +43,12 @@ export function OrderPage() {
   const [tableError, setTableError] = useState('');
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
   const [selectedTableNumber, setSelectedTableNumber] = useState<number | null>(null);
+  const [cardDetails, setCardDetails] = useState({
+    holder: '',
+    number: '',
+    expiry: '',
+    cvv: '',
+  });
 
   const orderTypes = [
     { type: 'delivery' as OrderType, icon: Truck, label: t.order.orderTypes.delivery.label, description: t.order.orderTypes.delivery.description },
@@ -156,6 +162,23 @@ export function OrderPage() {
     if (selectedType === 'delivery' && !address.trim()) {
       newErrors.push(t.order.errorAddress);
     }
+    if (selectedType === 'delivery') {
+      const cardNumberDigits = cardDetails.number.replace(/\D/g, '');
+      const cvvDigits = cardDetails.cvv.replace(/\D/g, '');
+
+      if (!cardDetails.holder.trim()) {
+        newErrors.push(t.order.cardHolderRequired);
+      }
+      if (cardNumberDigits.length !== 16) {
+        newErrors.push(t.order.cardNumberInvalid);
+      }
+      if (!cardDetails.expiry.trim()) {
+        newErrors.push(t.order.expiryRequired);
+      }
+      if (cvvDigits.length !== 3) {
+        newErrors.push(t.order.cvvInvalid);
+      }
+    }
     if (selectedType === 'dine-in' && !selectedTableId) {
       newErrors.push(t.order.pleaseSelectTable);
     }
@@ -196,6 +219,7 @@ export function OrderPage() {
               'DineIn',
         deliveryAddress: selectedType === 'delivery' ? address.trim() : null,
         tableId: selectedType === 'dine-in' ? selectedTableId : null,
+        isPaid: selectedType === 'delivery',
         items: cart.map(item => ({
           productId: item.id,
           quantity: item.quantity
@@ -218,9 +242,10 @@ export function OrderPage() {
       }
       clearCart();
       setAddress('');
+      setCardDetails({ holder: '', number: '', expiry: '', cvv: '' });
       setSelectedTableId(null);
       setSelectedTableNumber(null);
-      setSuccessMsg(t.order.successMsg);
+      setSuccessMsg(selectedType === 'delivery' ? t.order.paymentSuccessfulDelivery : t.order.successMsg);
       setTimeout(() => setSuccessMsg(''), 4000);
     } catch (error) {
       setErrors([error instanceof Error ? error.message : t.order.errorPlaceOrder]);
@@ -288,6 +313,48 @@ export function OrderPage() {
                 onChange={(e) => setAddress(e.target.value)}
               />
               <p className="text-gray-500 text-xs mt-2">{t.order.deliveryFormatHint}</p>
+
+              <div className="mt-6 rounded-2xl border border-blue-900/50 bg-blue-950/20 p-5">
+                <label className="mb-4 flex items-center gap-2 text-white">
+                  <CreditCard className="h-5 w-5 text-blue-400" />
+                  <span>{t.order.onlinePayment}</span>
+                </label>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="md:col-span-2">
+                    <Input
+                      type="text"
+                      placeholder={t.order.cardHolder}
+                      value={cardDetails.holder}
+                      onChange={(e) => setCardDetails({ ...cardDetails, holder: e.target.value })}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <Input
+                      type="text"
+                      inputMode="numeric"
+                      placeholder={t.order.cardNumber}
+                      value={cardDetails.number}
+                      maxLength={19}
+                      onChange={(e) => setCardDetails({ ...cardDetails, number: e.target.value })}
+                    />
+                  </div>
+                  <Input
+                    type="text"
+                    placeholder={t.order.expiry}
+                    value={cardDetails.expiry}
+                    maxLength={7}
+                    onChange={(e) => setCardDetails({ ...cardDetails, expiry: e.target.value })}
+                  />
+                  <Input
+                    type="password"
+                    inputMode="numeric"
+                    placeholder={t.order.cvv}
+                    value={cardDetails.cvv}
+                    maxLength={3}
+                    onChange={(e) => setCardDetails({ ...cardDetails, cvv: e.target.value })}
+                  />
+                </div>
+              </div>
             </div>
           )}
 

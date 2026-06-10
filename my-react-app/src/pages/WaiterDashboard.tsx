@@ -164,18 +164,28 @@ export function WaiterDashboard() {
     return [...apiRows, ...localRows].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }, [apiOrders, orders]);
 
-  const currentOrders = displayOrders.filter((order) =>
-    !order.finalized &&
-    !order.isPaid &&
-    order.status !== 'closed' &&
-    order.status !== 'cancelled'
-  );
+  const currentOrders = displayOrders.filter((order) => {
+    if (order.finalized || order.status === 'closed' || order.status === 'cancelled') {
+      return false;
+    }
+
+    if (order.type === 'dine-in' && order.isPaid) {
+      return false;
+    }
+
+    return !(order.type !== 'dine-in' && order.status === 'delivered');
+  });
   const recentHistoryOrders = displayOrders
-    .filter((order) => order.finalized || order.isPaid || order.status === 'closed')
+    .filter((order) =>
+      order.finalized ||
+      order.status === 'closed' ||
+      (order.type === 'dine-in' && order.isPaid) ||
+      (order.type !== 'dine-in' && order.status === 'delivered')
+    )
     .slice(0, 3);
 
   useEffect(() => {
-    if (user?.role !== 'waiter' && user?.role !== 'admin') {
+    if (user?.role !== 'waiter' && user?.role !== 'manager' && user?.role !== 'admin') {
       return;
     }
 
@@ -342,14 +352,14 @@ export function WaiterDashboard() {
           <div className="flex flex-wrap gap-3">
             <AdminBackButton />
             <Button
-              onClick={() => navigate('/dashboard/waiter/create-order')}
+              onClick={() => navigate('/waiter/create-order')}
               className="px-6"
             >
               <Plus className="w-4 h-4" />
               {t.waiter.createNewOrder}
             </Button>
             <Button
-              onClick={() => navigate('/dashboard/waiter/bill')}
+              onClick={() => navigate('/waiter/bill')}
               variant="secondary"
               className="px-6"
             >

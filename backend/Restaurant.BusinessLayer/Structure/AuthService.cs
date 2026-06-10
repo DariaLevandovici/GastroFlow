@@ -101,6 +101,7 @@ public class AuthService : IAuthService
             new(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
             new(JwtRegisteredClaimNames.Email, user.Email),
             new(ClaimTypes.Role, user.Role.ToString()),
+            new("roleId", ((int)user.Role).ToString()),
             new(ClaimTypes.GivenName, user.FirstName),
             new(ClaimTypes.Surname, user.LastName)
         };
@@ -119,6 +120,7 @@ public class AuthService : IAuthService
         {
             Token = new JwtSecurityTokenHandler().WriteToken(token),
             Role = user.Role.ToString(),
+            RoleId = (int)user.Role,
             FirstName = user.FirstName,
             LastName = user.LastName
         };

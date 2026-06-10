@@ -7,7 +7,7 @@ namespace Restaurant.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin")] // Dashboard stats for admin only
+[Authorize(Roles = "Admin,Manager")]
 public class StatisticsController : ControllerBase
 {
     private readonly IStatisticsService _statisticsService;

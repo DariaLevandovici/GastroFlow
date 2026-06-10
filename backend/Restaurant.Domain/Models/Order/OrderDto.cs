@@ -42,6 +42,7 @@ public class CreateOrderDto
     public string OrderType { get; set; } = "Delivery";
     public string? DeliveryAddress { get; set; }
     public int? TableId { get; set; }
+    public bool IsPaid { get; set; }
     
     [Required]
     [MinLength(1, ErrorMessage = "Order must contain at least one item.")]

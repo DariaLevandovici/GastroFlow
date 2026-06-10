@@ -7,7 +7,7 @@ namespace Restaurant.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-[Authorize(Roles = "Admin,Waiter,Chef")]
+[Authorize(Roles = "Admin,Manager,Waiter,Cook")]
 public class OrderItemsController : ControllerBase
 {
     private readonly AppDbContext _context;

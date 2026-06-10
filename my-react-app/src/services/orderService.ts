@@ -9,6 +9,7 @@ export interface CreateClientOrderPayload {
   orderType: 'Delivery' | 'Takeaway' | 'DineIn';
   deliveryAddress?: string | null;
   tableId?: number | null;
+  isPaid?: boolean;
   items: CreateOrderItemPayload[];
 }
 
@@ -58,7 +59,7 @@ async function readErrorMessage(response: Response, fallback: string) {
 }
 
 export async function createOrder(payload: CreateClientOrderPayload, role?: string): Promise<ApiOrder> {
-  const isStaffOrder = role === 'admin' || role === 'waiter';
+  const isStaffOrder = role === 'admin' || role === 'manager' || role === 'waiter';
   const endpoint = isStaffOrder ? `${API_ENDPOINTS.orders}/waiter` : `${API_ENDPOINTS.orders}/client`;
   const response = await fetch(endpoint, {
     method: 'POST',
@@ -68,7 +69,7 @@ export async function createOrder(payload: CreateClientOrderPayload, role?: stri
 
   if (response.status === 401 || response.status === 403) {
     throw new Error(isStaffOrder
-      ? 'Please sign in as Waiter or Admin before placing an order.'
+      ? 'Please sign in as Waiter, Manager or Admin before placing an order.'
       : 'Please sign in as a Client before placing an order.');
   }
 
@@ -120,7 +121,7 @@ export async function updateOrderPayment(orderId: number, isPaid: boolean): Prom
   });
 
   if (response.status === 401 || response.status === 403) {
-    throw new Error('Please sign in as Waiter or Admin to close the bill.');
+    throw new Error('Please sign in as Waiter, Manager or Admin to close the bill.');
   }
 
   if (!response.ok) {
